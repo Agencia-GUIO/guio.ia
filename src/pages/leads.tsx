@@ -1,0 +1,265 @@
+import { useEffect, useState } from "react"
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
+import { Calendar as CalendarIcon, Download, Loader2 } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { cn } from "@/lib/utils"
+import { supabase } from "@/lib/supabase"
+
+type DateRange = { from: Date; to?: Date }
+type Lead = {
+  id: string
+  created_at: string
+  nome: string
+  celular_cliente: string
+  timer_is_active: boolean
+  message_content: string
+  total_messages: number
+}
+
+const PAGE_SIZE = 10
+
+export function LeadsPage() {
+  const [dateRange, setDateRange] = useState<DateRange | undefined>()
+  const [leads, setLeads] = useState<Lead[]>([])
+  const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalLeads, setTotalLeads] = useState(0)
+
+  useEffect(() => {
+    fetchLeads()
+  }, [dateRange, page])
+
+  async function fetchLeads() {
+    try {
+      setLoading(true)
+
+      // First, get the total count
+      let countQuery = supabase
+        .from('customers')
+        .select('id', { count: 'exact' })
+
+      if (dateRange?.from) {
+        countQuery = countQuery.gte('created_at', dateRange.from.toISOString())
+        if (dateRange.to) {
+          countQuery = countQuery.lte('created_at', dateRange.to.toISOString())
+        }
+      }
+
+      const { count: totalCount, error: countError } = await countQuery
+
+      if (countError) throw countError
+
+      setTotalLeads(totalCount || 0)
+      setTotalPages(Math.ceil((totalCount || 0) / PAGE_SIZE))
+
+      // Then get the paginated leads
+      let query = supabase.rpc('get_customer_leads')
+
+      if (dateRange?.from) {
+        query = query.gte('created_at', dateRange.from.toISOString())
+        if (dateRange.to) {
+          query = query.lte('created_at', dateRange.to.toISOString())
+        }
+      }
+
+      // Add pagination
+      const from = (page - 1) * PAGE_SIZE
+      const to = from + PAGE_SIZE - 1
+      query = query.range(from, to)
+
+      const { data, error } = await query
+
+      if (error) throw error
+
+      setLeads(data || [])
+    } catch (error) {
+      console.error("Error fetching leads:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function exportCSV() {
+    const csvContent = [
+      ["Name", "Phone", "Status", "Messages", "LastInteraction"],
+      ...leads.map((lead) => [
+        lead.nome,
+        lead.celular_cliente,
+        lead.timer_is_active ? "Active" : "Inactive",
+        lead.total_messages,
+        format(new Date(lead.created_at), "yyyy-MM-dd HH:mm:ss")
+      ])
+    ]
+      .map((row) => row.join(","))
+      .join("\n")
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const link = document.createElement("a")
+    link.href = URL.createObjectURL(blob)
+    link.setAttribute("download", `leads_${format(new Date(), "yyyy-MM-dd")}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold">Leads</h1>
+          <p className="text-sm text-muted-foreground">
+            Total de {totalLeads} {totalLeads === 1 ? 'lead' : 'leads'}
+            {dateRange?.from && (
+              <> no período selecionado</>
+            )}
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "justify-start text-left font-normal",
+                  !dateRange && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateRange?.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, "dd/MM/yy")} -{" "}
+                      {format(dateRange.to, "dd/MM/yy")}
+                    </>
+                  ) : (
+                    format(dateRange.from, "dd/MM/yy")
+                  )
+                ) : (
+                  <span>Filtrar por data</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+                locale={ptBR}
+              />
+            </PopoverContent>
+          </Popover>
+
+          <Button onClick={exportCSV}>
+            <Download className="mr-2 h-4 w-4" />
+            Exportar CSV
+          </Button>
+        </div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de Leads</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Data/Hora</TableHead>
+                <TableHead>Nome</TableHead>
+                <TableHead>Telefone</TableHead>
+                <TableHead>Status da IA</TableHead>
+                <TableHead>Total de Mensagens</TableHead>
+                <TableHead>Última Mensagem</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                  </TableCell>
+                </TableRow>
+              ) : leads.length > 0 ? (
+                leads.map((lead) => (
+                  <TableRow key={lead.id}>
+                    <TableCell>
+                      {format(new Date(lead.created_at), "dd/MM/yy HH:mm")}
+                    </TableCell>
+                    <TableCell>{lead.nome}</TableCell>
+                    <TableCell>{lead.celular_cliente}</TableCell>
+                    <TableCell>
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
+                          lead.timer_is_active
+                            ? "bg-primary/10 text-primary"
+                            : "bg-muted text-muted-foreground"
+                        )}
+                      >
+                        {lead.timer_is_active ? "Ativa" : "Inativa"}
+                      </span>
+                    </TableCell>
+                    <TableCell>{lead.total_messages}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">
+                      {lead.message_content}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    Nenhum lead encontrado
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+
+          {totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+              >
+                Anterior
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Página {page} de {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+              >
+                Próxima
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

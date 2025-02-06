@@ -1,0 +1,62 @@
+import { Sidebar } from "./sidebar";
+import { Button } from "@/components/ui/button";
+import { Menu, Bot } from "lucide-react";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+
+import { useAuth } from "@/lib/auth-context";
+import { LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+export function MainLayout({ children }: { children: React.ReactNode }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  async function handleLogout() {
+    await logout();
+    navigate("/auth/login");
+  }
+
+  return (
+    <div className="flex min-h-screen bg-background text-foreground">
+      <div
+        className={cn(
+          "fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden",
+          sidebarOpen ? "block" : "hidden"
+        )}
+        onClick={() => setSidebarOpen(false)}
+      />
+      <Sidebar
+        className={cn(
+          "fixed inset-y-0 z-50 w-72 border-r bg-background transition-transform lg:static lg:translate-x-0",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      />
+      <div className="flex-1">
+        <Button variant="ghost" size="icon" onClick={handleLogout}>
+          <LogOut className="h-4 w-4" />
+          <span className="sr-only">Sair</span>
+        </Button>
+        <div className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-6 lg:hidden">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <Menu className="h-6 w-6" />
+            <span className="sr-only">Toggle sidebar</span>
+          </Button>
+          <div className="flex items-center gap-2">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+              <div className="text-primary">
+                <Bot className="h-5 w-5" />
+              </div>
+            </div>
+            <h1 className="text-lg font-semibold text-foreground">GUIO.AI</h1>
+          </div>
+        </div>
+        <main className="flex-1 p-8">{children}</main>
+      </div>
+    </div>
+  );
+}
