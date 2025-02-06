@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
+import { useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import {
   Calendar as CalendarIcon,
   MessageSquare,
@@ -16,85 +20,68 @@ import {
   X,
   Bot,
   User,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-import { supabase } from "@/lib/supabase"
-import type { Database } from "@/lib/database.types"
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
+import type { Database } from "@/lib/database.types";
 
-type Customer = Database["public"]["Tables"]["customers"]["Row"]
-type Message = Database["public"]["Tables"]["messages"]["Row"]
-type FilterStatus = "all" | "active" | "inactive"
-type DateRange = { from: Date; to?: Date }
+type Customer = Database["public"]["Tables"]["customers"]["Row"];
+type Message = Database["public"]["Tables"]["messages"]["Row"];
+type FilterStatus = "all" | "active" | "inactive";
+type DateRange = { from: Date; to?: Date };
 
 const datePresets = [
   { label: "Hoje", days: 0 },
   { label: "7 dias", days: 7 },
   { label: "30 dias", days: 30 },
   { label: "90 dias", days: 90 },
-]
+];
 
 export function ChatPage() {
-  const [customers, setCustomers] = useState<Customer[]>([])
-  const [messages, setMessages] = useState<Message[]>([])
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState<FilterStatus>("all")
-  const [dateRange, setDateRange] = useState<DateRange | undefined>()
-  const [newMessage, setNewMessage] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null
+  );
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [newMessage, setNewMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     async function fetchCustomers() {
-      let query = supabase.from("customers").select("*")
-
-      if (statusFilter !== "all") {
-        query = query.eq("ativacao", statusFilter === "active")
-      }
-
+      let query = supabase.from("customers").select("*");
+      if (statusFilter !== "all")
+        query = query.eq("ativacao", statusFilter === "active");
       if (dateRange?.from) {
-        query = query.gte("created_at", dateRange.from.toISOString())
-        if (dateRange.to) {
-          query = query.lte("created_at", dateRange.to.toISOString())
-        }
+        query = query.gte("created_at", dateRange.from.toISOString());
+        if (dateRange.to)
+          query = query.lte("created_at", dateRange.to.toISOString());
       }
-
-      const { data, error } = await query.order("created_at", { ascending: false })
-
-      if (error) {
-        console.error("Error fetching customers:", error)
-        return
-      }
-
-      setCustomers(data)
-      if (data.length > 0 && !selectedCustomer) {
-        setSelectedCustomer(data[0])
+      const { data, error } = await query.order("created_at", {
+        ascending: false,
+      });
+      if (!error) setCustomers(data);
+      if (data) {
+        if (data.length > 0 && !selectedCustomer) setSelectedCustomer(data[0]);
       }
     }
+    fetchCustomers();
+  }, [statusFilter, dateRange]);
 
-    fetchCustomers()
-  }, [statusFilter, dateRange])
-
-  useEffect(() => {
-    if (!selectedCustomer) return
-
+  useEffect((): (() => Promise<"ok" | "timed out" | "error">) | undefined => {
+    if (!selectedCustomer) return;
     async function fetchMessages() {
       const { data, error } = await supabase
         .from("messages")
         .select("*")
-        .eq("phone", selectedCustomer.celular_cliente)
-        .order("created_at", { ascending: true })
-
-      if (error) {
-        console.error("Error fetching messages:", error)
-        return
-      }
-
-      setMessages(data)
+        .eq("phone", selectedCustomer?.celular_cliente)
+        .order("created_at", { ascending: true });
+      if (!error) setMessages(data);
     }
-
-    fetchMessages()
-
+    fetchMessages();
     const channel = supabase
       .channel("messages")
       .on(
@@ -106,77 +93,74 @@ export function ChatPage() {
           filter: `phone=eq.${selectedCustomer.celular_cliente}`,
         },
         (payload) => {
-          setMessages((current) => [...current, payload.new as Message])
+          setMessages((current) => [...current, payload.new as Message]);
         }
       )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [selectedCustomer])
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [selectedCustomer]);
 
   async function toggleCustomerActivation(customer: Customer) {
-    setLoading(true)
+    setLoading(true);
     const { error } = await supabase
       .from("customers")
       .update({ ativacao: !customer.ativacao })
-      .eq("id", customer.id)
+      .eq("id", customer.id);
 
     if (error) {
-      console.error("Error toggling customer activation:", error)
+      console.error("Error toggling customer activation:", error);
     } else {
       setCustomers((current) =>
         current.map((c) =>
           c.id === customer.id ? { ...c, ativacao: !c.ativacao } : c
         )
-      )
+      );
       if (selectedCustomer?.id === customer.id) {
-        setSelectedCustomer({ ...customer, ativacao: !customer.ativacao })
+        setSelectedCustomer({ ...customer, ativacao: !customer.ativacao });
       }
     }
-    setLoading(false)
+    setLoading(false);
   }
 
-  async function sendMessage(e: React.FormEvent) {
-    e.preventDefault()
-    if (!selectedCustomer || !newMessage.trim()) return
-
-    const message = {
-      message_content: newMessage,
-      status: "sent",
-      role: "assistant" as const,
-      phone: selectedCustomer.celular_cliente,
-      client_id: selectedCustomer.client_id,
-    }
-
-    const { error } = await supabase.from("messages").insert([message])
-
-    if (error) {
-      console.error("Error sending message:", error)
-    } else {
-      setNewMessage("")
-    }
-  }
+  const sendMessage = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!selectedCustomer || !newMessage.trim()) return;
+      const message = {
+        message_content: newMessage,
+        status: "sent",
+        role: "assistant" as const,
+        phone: selectedCustomer.celular_cliente,
+        client_id: selectedCustomer.client_id,
+      };
+      const { data, error } = await supabase
+        .from("messages")
+        .insert([message])
+        .select();
+      if (!error && data) setMessages((current) => [...current, data[0]]);
+      setNewMessage("");
+    },
+    [newMessage, selectedCustomer]
+  );
 
   function openWhatsApp(phone: string) {
-    window.open(`https://wa.me/${phone.replace(/\D/g, "")}`, "_blank")
+    window.open(`https://wa.me/${phone.replace(/\D/g, "")}`, "_blank");
   }
 
   function selectDatePreset(days: number) {
-    const to = new Date()
-    const from = new Date()
+    const to = new Date();
+    const from = new Date();
     if (days > 0) {
-      from.setDate(from.getDate() - days)
+      from.setDate(from.getDate() - days);
     } else {
-      from.setHours(0, 0, 0, 0)
+      from.setHours(0, 0, 0, 0);
     }
-    setDateRange({ from, to })
+    setDateRange({ from, to });
   }
 
   const filteredCustomers = customers.filter((customer) =>
     customer.nome.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  );
 
   return (
     <div className="relative flex h-[calc(100vh-4rem)] bg-background">
@@ -300,8 +284,8 @@ export function ChatPage() {
                   <button
                     key={customer.id}
                     onClick={() => {
-                      setSelectedCustomer(customer)
-                      setSidebarOpen(false)
+                      setSelectedCustomer(customer);
+                      setSidebarOpen(false);
                     }}
                     className={cn(
                       "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent",
@@ -312,7 +296,9 @@ export function ChatPage() {
                       <User className="h-5 w-5 text-primary" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-medium">{customer.nome}</div>
+                      <div className="truncate font-medium">
+                        {customer.nome}
+                      </div>
                       <div className="truncate text-xs text-muted-foreground">
                         {customer.celular_cliente}
                       </div>
@@ -374,7 +360,9 @@ export function ChatPage() {
                   </svg>
                 </Button>
                 <Button
-                  variant={selectedCustomer.ativacao ? "destructive" : "default"}
+                  variant={
+                    selectedCustomer.ativacao ? "destructive" : "default"
+                  }
                   size="icon"
                   onClick={() => toggleCustomerActivation(selectedCustomer)}
                   disabled={loading}
@@ -463,5 +451,5 @@ export function ChatPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

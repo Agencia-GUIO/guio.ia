@@ -23,6 +23,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/auth-context";
+import { toAbsoluteUrl } from "@/public/utils/AssetsHelper";
+// import * from ''
 
 const formSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -66,17 +68,25 @@ export function LoginPage() {
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
         <div className="absolute inset-0 bg-primary" />
         <div className="relative z-20 flex items-center gap-2 text-lg font-medium">
-          <Bot className="h-6 w-6" />
+          <img
+            src={toAbsoluteUrl("/src/public/media/Guio_02.png")}
+            alt=""
+            className="h-8 w8"
+          />
+          <img
+            src={toAbsoluteUrl("/src/public/media/Guio_01.png")}
+            alt=""
+            className="h-8 w-8"
+          />
           GUIO.AI
         </div>
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-2">
             <p className="text-lg">
-              "GUIO.AI revolucionou a forma como nos comunicamos com nossos
-              clientes. A automação inteligente nos permitiu escalar nosso
-              atendimento mantendo a qualidade."
+              Estratégias para um mundo cada vez mais digital
             </p>
-            <footer className="text-sm">Sofia Mendes</footer>
+
+            <footer className="text-sm"> Rafael Riedel</footer>
           </blockquote>
         </div>
       </div>
