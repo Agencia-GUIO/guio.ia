@@ -1,16 +1,18 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import { MainLayout } from "@/components/layout/main-layout"
-import { DashboardPage } from "@/pages/dashboard"
-import { ChatPage } from "@/pages/chat"
-import { LeadsPage } from "@/pages/leads"
-import { InsightsPage } from "@/pages/insights"
-import { LoginPage } from "@/pages/auth/login"
-import { RegisterPage } from "@/pages/auth/register"
-import { ResetPage } from "@/pages/auth/reset"
-import { ThemeProvider } from "@/lib/theme-provider"
-import { AuthProvider } from "@/lib/auth-context"
-import { AuthGuard } from "@/components/auth-guard"
-import { Toaster } from "@/components/toaster"
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { MainLayout } from "@/components/layout/main-layout";
+import { DashboardPage } from "@/pages/dashboard";
+import { ChatPage } from "@/pages/chat";
+import { LeadsPage } from "@/pages/leads";
+import { InsightsPage } from "@/pages/insights";
+import { LoginPage } from "@/pages/auth/login";
+import { RegisterPage } from "@/pages/auth/register";
+import { ResetPage } from "@/pages/auth/reset";
+import { ThemeProvider } from "@/lib/theme-provider";
+import { AuthProvider } from "@/lib/auth-context";
+import { AuthGuard } from "@/components/auth-guard";
+import { Toaster } from "@/components/toaster";
+import SettingsPage from "./pages/settings";
+import SupportPage from "./pages/support";
 
 function App() {
   return (
@@ -39,30 +41,6 @@ function App() {
                 }
               />
               <Route
-                path="/analytics"
-                element={
-                  <MainLayout>
-                    <div>Analytics Page</div>
-                  </MainLayout>
-                }
-              />
-              <Route
-                path="/customers"
-                element={
-                  <MainLayout>
-                    <div>Customers Page</div>
-                  </MainLayout>
-                }
-              />
-              <Route
-                path="/documents"
-                element={
-                  <MainLayout>
-                    <div>Documents Page</div>
-                  </MainLayout>
-                }
-              />
-              <Route
                 path="/leads"
                 element={
                   <MainLayout>
@@ -82,7 +60,16 @@ function App() {
                 path="/settings"
                 element={
                   <MainLayout>
-                    <div>Settings Page</div>
+                    <SettingsPage />
+                  </MainLayout>
+                }
+              />
+
+              <Route
+                path="/supports"
+                element={
+                  <MainLayout>
+                    <SupportPage />
                   </MainLayout>
                 }
               />
@@ -92,7 +79,7 @@ function App() {
         <Toaster />
       </AuthProvider>
     </ThemeProvider>
-  )
+  );
 }
 
-export default App
+export default App;

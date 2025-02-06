@@ -35,6 +35,12 @@ import { supabase } from "@/lib/supabase";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))"];
 
+type TSituational = {
+  name: string;
+  quantity: string | number;
+  percentage: string;
+};
+
 // supabase.auth.signOut();
 
 export function DashboardPage() {
@@ -268,6 +274,48 @@ export function DashboardPage() {
         dashboardData.custoConversaChange >= 0 ? "positive" : "negative",
     },
   ];
+
+  const situations_test_data = [
+    { name: "Retomada de Cadastro", quantity: 32 },
+    { name: "Problemas com CEMIG", quantity: 28 },
+    { name: "Cadastro Duplicado", quantity: 15 },
+    { name: "Dúvidas sobre o Serviço", quantity: 25 },
+    { name: "Problemas de Acesso", quantity: 19 },
+    { name: "Cadastros Finalizados", quantity: 45 },
+  ];
+
+  const totalQuantity = situations_test_data.reduce(
+    (sum, item) => sum + item.quantity,
+    0
+  );
+
+  const formattedTestData = situations_test_data.map((item) => ({
+    ...item,
+    percentage: ((item.quantity / totalQuantity) * 100).toFixed(1) + "%",
+  }));
+
+  const [situationData, setSituationData] = useState(formattedTestData);
+
+  // useEffect(() => {
+  //   async function fetchSituationData() {
+  //     try {
+  //       const { data, error } = await supabase.from("situations").select("*");
+  //       if (error) throw error;
+
+  //       const total = data.reduce((sum, item) => sum + item.quantity, 0);
+  //       const formattedData = data.map((item) => ({
+  //         name: item.situation,
+  //         quantity: item.quantity,
+  //         percentage: ((item.quantity / total) * 100).toFixed(1) + "%",
+  //       }));
+
+  //       setSituationData(formattedData);
+  //     } catch (error) {
+  //       console.error("Error fetching situation data:", error);
+  //     }
+  //   }
+  //   fetchSituationData();
+  // }, []);
 
   return (
     <div className="space-y-8">
@@ -512,6 +560,68 @@ export function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Distribuição de Situações</CardTitle>
+          <CardDescription>
+            Dados dinâmicos sobre as ocorrências
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={situationData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis
+                  type="number"
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  width={150}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip />
+                <Bar
+                  dataKey="quantity"
+                  fill="hsl(var(--primary))"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <table className="w-full mt-4 text-sm border-collapse border border-gray-700">
+            <thead>
+              <tr className="bg-gray-800 text-white">
+                <th className="p-2 border border-gray-700">Situação</th>
+                <th className="p-2 border border-gray-700">Quantidade</th>
+                <th className="p-2 border border-gray-700">Porcentagem</th>
+              </tr>
+            </thead>
+            <tbody>
+              {situationData.map((item, index) => (
+                <tr key={index} className="border border-gray-700">
+                  <td className="p-2 border border-gray-700">{item.name}</td>
+                  <td className="p-2 border border-gray-700 text-center">
+                    {item.quantity}
+                  </td>
+                  <td className="p-2 border border-gray-700 text-center">
+                    {item.percentage}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

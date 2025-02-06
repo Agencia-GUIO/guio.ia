@@ -1,4 +1,4 @@
-import { Home, MessageSquare, Settings, BarChart3, Users, FileText, Inbox, Lightbulb } from "lucide-react"
+import { Home, MessageSquare, Settings, Inbox, Lightbulb } from "lucide-react";
 
 export const routes = [
   {
@@ -11,21 +11,7 @@ export const routes = [
     icon: MessageSquare,
     path: "/chat",
   },
-  {
-    title: "Analytics",
-    icon: BarChart3,
-    path: "/analytics",
-  },
-  {
-    title: "Customers",
-    icon: Users,
-    path: "/customers",
-  },
-  {
-    title: "Documents",
-    icon: FileText,
-    path: "/documents",
-  },
+
   {
     title: "Leads",
     icon: Inbox,
@@ -41,4 +27,4 @@ export const routes = [
     icon: Settings,
     path: "/settings",
   },
-]
+];
