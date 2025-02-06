@@ -1,11 +1,17 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { Bot, Loader2 } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Bot, Loader2 } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -13,23 +19,23 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { useToast } from "@/components/ui/use-toast"
-import { useAuth } from "@/lib/auth-context"
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/lib/auth-context";
 
 const formSchema = z.object({
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "A senha deve ter no mínimo 6 caracteres"),
-})
+});
 
-type FormData = z.infer<typeof formSchema>
+type FormData = z.infer<typeof formSchema>;
 
 export function LoginPage() {
-  const { login } = useAuth()
-  const navigate = useNavigate()
-  const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -37,22 +43,21 @@ export function LoginPage() {
       email: "",
       password: "",
     },
-  })
+  });
 
   async function onSubmit(data: FormData) {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const { error } = await login(data.email, data.password)
-      if (error) throw new Error(error)
-      navigate("/")
+      const { error } = await login(data.email, data.password);
+      if (error) throw new Error(error);
+      navigate("/");
     } catch (error) {
       toast({
-        variant: "destructive",
         title: "Erro ao fazer login",
         description: error instanceof Error ? error.message : "Tente novamente",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -67,7 +72,9 @@ export function LoginPage() {
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-2">
             <p className="text-lg">
-              "GUIO.AI revolucionou a forma como nos comunicamos com nossos clientes. A automação inteligente nos permitiu escalar nosso atendimento mantendo a qualidade."
+              "GUIO.AI revolucionou a forma como nos comunicamos com nossos
+              clientes. A automação inteligente nos permitiu escalar nosso
+              atendimento mantendo a qualidade."
             </p>
             <footer className="text-sm">Sofia Mendes</footer>
           </blockquote>
@@ -84,7 +91,10 @@ export function LoginPage() {
             </CardHeader>
             <CardContent>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-4"
+                >
                   <FormField
                     control={form.control}
                     name="email"
@@ -158,5 +168,5 @@ export function LoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

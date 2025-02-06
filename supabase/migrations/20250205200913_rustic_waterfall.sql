@@ -11,11 +11,11 @@
 */
 
 -- Function to update user's company_id
-CREATE OR REPLACE FUNCTION update_user_company(user_id uuid, company_id uuid)
+CREATE OR REPLACE FUNCTION update_user_company(user_id uuid, company_id_params uuid)
 RETURNS void AS $$
 BEGIN
   UPDATE auth.users 
-  SET company_id = company_id
+  SET company_id = company_id_params
   WHERE id = user_id;
 END;
 $$ LANGUAGE plpgsql

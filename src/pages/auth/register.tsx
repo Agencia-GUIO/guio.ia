@@ -31,7 +31,6 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
-import { createClient } from "@supabase/supabase-js";
 
 interface Company {
   id: string;
@@ -190,7 +189,7 @@ export function RegisterPage() {
                         <FormLabel>Empresa</FormLabel>
                         <FormControl>
                           <Select
-                            value={field.name}
+                            value={field.value}
                             onValueChange={field.onChange}
                           >
                             <SelectTrigger>
