@@ -1,134 +1,182 @@
-import { useState, useEffect } from "react"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Loader2, ChevronLeft, ChevronRight, Bot, LineChart, Lightbulb, TrendingUp } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+} from "@/components/ui/select";
+import {
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Bot,
+  LineChart,
+  Lightbulb,
+  TrendingUp,
+} from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "@/components/hooks/use-toast";
+
+import axios from "axios";
+import { useAuth } from "@/lib/auth-context";
 
 interface InsightAnalysis {
-  id: string
-  created_at: Date
-  period: number
+  id: string;
+  created_at: Date;
+  period: number;
   insights: {
-    summary: string
-    topics: string[]
+    summary: string;
+    topics: string[];
     sentiment: {
-      positive: number
-      negative: number
-      neutral: number
-    }
-    findings: string[]
-    recommendations: string[]
-  }
+      positive: number;
+      negative: number;
+      neutral: number;
+    };
+    findings: string[];
+    recommendations: string[];
+  };
 }
 
 const periods = [
   { value: 7, label: "7 dias" },
   { value: 15, label: "15 dias" },
   { value: 30, label: "30 dias" },
-]
+];
 
 export function InsightsPage() {
-  const [selectedPeriod, setSelectedPeriod] = useState(7)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [insights, setInsights] = useState<InsightAnalysis[]>([])
-  const [currentInsightIndex, setCurrentInsightIndex] = useState(0)
-  const [user, setUser] = useState<{ id: string } | null>(null)
+  const [selectedPeriod, setSelectedPeriod] = useState(7);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [insights, setInsights] = useState<InsightAnalysis[]>([]);
+  const [currentInsightIndex, setCurrentInsightIndex] = useState(0);
+  const [user, setUser] = useState<{ id: string } | null>(null);
+  const { company } = useAuth();
 
   useEffect(() => {
     // Get the current user
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
-        setUser({ id: user.id })
-        fetchInsights()
+        setUser({ id: user.id });
+        fetchInsights();
       }
-    })
-  }, [])
+    });
+  }, []);
 
   async function fetchInsights() {
     try {
+      const { data: dataUser, error: errorAuth } =
+        await supabase.auth.getUser();
+
+      if (errorAuth && !dataUser) {
+        toast({
+          title: "Erro ao buscar Usuario",
+          description: errorAuth?.message,
+        });
+      }
       const { data, error } = await supabase
         .from("insights")
         .select("*")
-        .order("created_at", { ascending: false })
+        .eq("company_id", dataUser.user?.user_metadata.company_id)
+        .order("created_at", { ascending: false });
 
-      if (error) throw error
+      if (error) throw error;
 
-      setInsights(data.map(item => ({
-        ...item,
-        created_at: new Date(item.created_at)
-      })))
+      setInsights(
+        data.map((item) => ({
+          ...item,
+          created_at: new Date(item.created_at),
+        }))
+      );
     } catch (error) {
-      console.error("Error fetching insights:", error)
+      toast({
+        title: "Erro",
+        description: String(error),
+      });
     }
+  }
+
+  async function sendMessageWebHook(filteredMessages: any) {
+    try {
+      const response = await axios.post(
+        `https://hook.2be.com.br/webhook/guioai-insights`,
+        filteredMessages, // Enviando o corpo da requisição
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+          },
+        }
+      );
+    } catch (error: any) {}
   }
 
   async function analyzeConversations() {
-    if (!user) return
-    setIsAnalyzing(true)
+    if (!user) return;
+    setIsAnalyzing(true);
 
-    try {
-      // Simulated API call - replace with your actual webhook
-      const analysis: InsightAnalysis = {
-        id: crypto.randomUUID(),
-        created_at: new Date(),
-        period: selectedPeriod,
-        insights: {
-          summary: "Análise das conversas dos últimos " + selectedPeriod + " dias mostra um padrão consistente de interações positivas com os clientes.",
-          topics: [
-            "Dúvidas sobre produtos",
-            "Suporte técnico",
-            "Feedback positivo",
-            "Solicitações de informação"
-          ],
-          sentiment: {
-            positive: 65,
-            negative: 10,
-            neutral: 25
-          },
-          findings: [
-            "Maior engajamento em horário comercial",
-            "Respostas rápidas aumentam satisfação",
-            "Tópicos técnicos requerem mais interações",
-            "Clientes valorizam atendimento personalizado"
-          ],
-          recommendations: [
-            "Expandir horário de atendimento",
-            "Criar base de conhecimento",
-            "Implementar respostas automáticas",
-            "Treinar IA para tópicos específicos"
-          ]
-        }
+    const { data: authData, error } = await supabase.auth.getUser();
+
+    if (error && !authData) {
+      toast({
+        title: "Erro ao buscar Usuario",
+        description: error?.message,
+      });
+    }
+    console.log("User Metadata:", authData.user?.user_metadata);
+    console.log("Company ID:", authData.user?.user_metadata?.company_id);
+
+    const { data: messages, error: errorMessage } = await supabase
+      .from("messages")
+      .select(
+        "*, customers:customers!messages_customer_id_fkey(id, nome, celular_cliente), companies(id, name)" // 🔥 Usa INNER JOIN para forçar a relação
+      )
+      .eq("company_id", authData.user?.user_metadata.company_id);
+
+    if (!errorMessage && messages) {
+      try {
+        const filteredMessages = messages.map(
+          ({
+            status,
+            tokens,
+            custo_tokens,
+            customer_id,
+            company_id,
+            ...rest
+          }) => rest
+        );
+
+        await sendMessageWebHook(filteredMessages);
+
+        toast({
+          title: "Sucesso",
+          description: "Dados enviados com sucesso!!!",
+        });
+      } catch (error) {
+        toast({
+          title: "Sucesso",
+          description: "Dados enviados com sucesso!!!",
+        });
+      } finally {
+        setIsAnalyzing(false);
       }
-
-      const { error } = await supabase
-        .from("insights")
-        .insert([{
-          period: analysis.period,
-          insights: analysis.insights,
-          client_id: user.id
-        }])
-
-      if (error) throw error
-
-      await fetchInsights()
-      setCurrentInsightIndex(0)
-    } catch (error) {
-      console.error("Error analyzing conversations:", error)
-    } finally {
-      setIsAnalyzing(false)
+    } else {
+      return console.log(`error`);
     }
   }
 
-  const currentInsight = insights[currentInsightIndex]
+  const currentInsight = insights[currentInsightIndex];
 
   if (!insights.length) {
     return (
@@ -150,14 +198,20 @@ export function InsightsPage() {
               </SelectTrigger>
               <SelectContent>
                 {periods.map((period) => (
-                  <SelectItem key={period.value} value={period.value.toString()}>
+                  <SelectItem
+                    key={period.value}
+                    value={period.value.toString()}
+                  >
                     {period.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <Button onClick={analyzeConversations} disabled={isAnalyzing || !user}>
+            <Button
+              onClick={analyzeConversations}
+              disabled={isAnalyzing || !user}
+            >
               {isAnalyzing ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -177,7 +231,9 @@ export function InsightsPage() {
           <CardContent className="flex h-[400px] items-center justify-center">
             <div className="text-center">
               <TrendingUp className="mx-auto h-8 w-8 text-muted-foreground" />
-              <h2 className="mt-2 text-lg font-semibold">Nenhuma análise encontrada</h2>
+              <h2 className="mt-2 text-lg font-semibold">
+                Nenhuma análise encontrada
+              </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Selecione um período e clique em Analisar Conversas para começar
               </p>
@@ -185,7 +241,7 @@ export function InsightsPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -214,7 +270,10 @@ export function InsightsPage() {
             </SelectContent>
           </Select>
 
-          <Button onClick={analyzeConversations} disabled={isAnalyzing || !user}>
+          <Button
+            onClick={analyzeConversations}
+            disabled={isAnalyzing || !user}
+          >
             {isAnalyzing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -236,13 +295,20 @@ export function InsightsPage() {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => setCurrentInsightIndex((i) => Math.min(insights.length - 1, i + 1))}
+            onClick={() =>
+              setCurrentInsightIndex((i) =>
+                Math.min(insights.length - 1, i + 1)
+              )
+            }
             disabled={currentInsightIndex === insights.length - 1}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <div className="text-sm text-muted-foreground">
-            Análise de {format(currentInsight.created_at, "dd 'de' MMMM", { locale: ptBR })}
+            Análise de{" "}
+            {format(currentInsight.created_at, "dd 'de' MMMM", {
+              locale: ptBR,
+            })}
           </div>
           <Button
             variant="outline"
@@ -283,7 +349,9 @@ export function InsightsPage() {
               </div>
 
               <div className="mt-6">
-                <h4 className="mb-4 text-sm font-medium">Análise de Sentimento</h4>
+                <h4 className="mb-4 text-sm font-medium">
+                  Análise de Sentimento
+                </h4>
                 <div className="flex gap-4">
                   <div className="flex-1 space-y-1">
                     <div className="flex justify-between text-xs">
@@ -361,14 +429,16 @@ export function InsightsPage() {
               </CardHeader>
               <CardContent>
                 <ul className="space-y-4">
-                  {currentInsight.insights.recommendations.map((recommendation, index) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                        {index + 1}
-                      </div>
-                      <span className="text-sm">{recommendation}</span>
-                    </li>
-                  ))}
+                  {currentInsight.insights.recommendations.map(
+                    (recommendation, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          {index + 1}
+                        </div>
+                        <span className="text-sm">{recommendation}</span>
+                      </li>
+                    )
+                  )}
                 </ul>
               </CardContent>
             </Card>
@@ -376,5 +446,5 @@ export function InsightsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

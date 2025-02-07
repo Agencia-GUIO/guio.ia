@@ -6,15 +6,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import {
-  MessageSquare,
-  Clock,
-  Bot,
-  Power,
-  DollarSign,
-  Gauge,
-  Camera,
-} from "lucide-react";
+import { MessageSquare, Clock, DollarSign, Gauge } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   AreaChart,
@@ -31,7 +23,9 @@ import {
   ResponsiveContainer,
   Label,
 } from "recharts";
-import { supabase } from "@/lib/supabase";
+import { adminAuthClient, supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth-context";
+import { toast } from "@/components/hooks/use-toast";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))"];
 
@@ -90,10 +84,19 @@ export function DashboardPage() {
   useEffect(() => {
     async function fetchDashboardData() {
       try {
+        const { data: user, error } = await supabase.auth.getUser();
+
+        if (error || !user) {
+          toast({
+            title: "Erro ao buscar Usuario",
+            description: error?.message,
+          });
+        }
         // Fetch messages data
         const { data: messages, error: messagesError } = await supabase
           .from("messages")
-          .select("*");
+          .select("*")
+          .eq("company_id", user.user?.user_metadata.company_id);
 
         if (messagesError) throw messagesError;
 
@@ -140,6 +143,7 @@ export function DashboardPage() {
         const { data: customers, error: customersError } = await supabase
           .from("customers")
           .select("*")
+          .eq("company_id", user.user?.user_metadata.company_id)
           .order("created_at", { ascending: false });
 
         if (customersError) throw customersError;

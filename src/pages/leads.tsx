@@ -1,15 +1,15 @@
-import { useEffect, useState } from "react"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
-import { Calendar as CalendarIcon, Download, Loader2 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
+import { useEffect, useState } from "react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Calendar as CalendarIcon, Download, Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -17,82 +17,98 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { cn } from "@/lib/utils"
-import { supabase } from "@/lib/supabase"
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
+import { toast } from "@/components/hooks/use-toast";
 
-type DateRange = { from: Date; to?: Date }
+type DateRange = { from: Date; to?: Date };
 type Lead = {
-  id: string
-  created_at: string
-  nome: string
-  celular_cliente: string
-  timer_is_active: boolean
-  message_content: string
-  total_messages: number
-}
+  id: string;
+  created_at: string;
+  nome: string;
+  celular_cliente: string;
+  timer_is_active: boolean;
+  message_content: string;
+  total_messages: number;
+};
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 10;
 
 export function LeadsPage() {
-  const [dateRange, setDateRange] = useState<DateRange | undefined>()
-  const [leads, setLeads] = useState<Lead[]>([])
-  const [loading, setLoading] = useState(true)
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [totalLeads, setTotalLeads] = useState(0)
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalLeads, setTotalLeads] = useState(0);
 
   useEffect(() => {
-    fetchLeads()
-  }, [dateRange, page])
+    fetchLeads();
+  }, [dateRange, page]);
 
   async function fetchLeads() {
     try {
-      setLoading(true)
+      setLoading(true);
+
+      const { data: user, error: errorAuth } = await supabase.auth.getUser();
+
+      if (errorAuth && !user) {
+        toast({
+          title: "Erro ao buscar Usuario",
+          description: errorAuth?.message,
+        });
+      }
 
       // First, get the total count
       let countQuery = supabase
-        .from('customers')
-        .select('id', { count: 'exact' })
+        .from("customers")
+        .select("id", { count: "exact" })
+        .eq("company_id", user.user?.user_metadata.company_id);
 
       if (dateRange?.from) {
-        countQuery = countQuery.gte('created_at', dateRange.from.toISOString())
+        countQuery = countQuery.gte("created_at", dateRange.from.toISOString());
         if (dateRange.to) {
-          countQuery = countQuery.lte('created_at', dateRange.to.toISOString())
+          countQuery = countQuery.lte("created_at", dateRange.to.toISOString());
         }
       }
 
-      const { count: totalCount, error: countError } = await countQuery
+      const { count: totalCount, error: countError } = await countQuery;
 
-      if (countError) throw countError
+      if (countError) throw countError;
 
-      setTotalLeads(totalCount || 0)
-      setTotalPages(Math.ceil((totalCount || 0) / PAGE_SIZE))
+      setTotalLeads(totalCount || 0);
+      setTotalPages(Math.ceil((totalCount || 0) / PAGE_SIZE));
 
       // Then get the paginated leads
-      let query = supabase.rpc('get_customer_leads')
+      let query = supabase.rpc("get_customer_leads", {
+        user_company_id: user?.user?.user_metadata.company_id,
+      });
 
       if (dateRange?.from) {
-        query = query.gte('created_at', dateRange.from.toISOString())
+        query = query.gte("created_at", dateRange.from.toISOString());
         if (dateRange.to) {
-          query = query.lte('created_at', dateRange.to.toISOString())
+          query = query.lte("created_at", dateRange.to.toISOString());
         }
       }
 
       // Add pagination
-      const from = (page - 1) * PAGE_SIZE
-      const to = from + PAGE_SIZE - 1
-      query = query.range(from, to)
+      const from = (page - 1) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      query = query.range(from, to);
 
-      const { data, error } = await query
+      const { data, error } = await query;
 
-      if (error) throw error
+      if (error) throw error;
 
-      setLeads(data || [])
+      setLeads(data || []);
     } catch (error) {
-      console.error("Error fetching leads:", error)
+      toast({
+        title: "Erro",
+        description: String(error),
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -104,19 +120,22 @@ export function LeadsPage() {
         lead.celular_cliente,
         lead.timer_is_active ? "Active" : "Inactive",
         lead.total_messages,
-        format(new Date(lead.created_at), "yyyy-MM-dd HH:mm:ss")
-      ])
+        format(new Date(lead.created_at), "yyyy-MM-dd HH:mm:ss"),
+      ]),
     ]
       .map((row) => row.join(","))
-      .join("\n")
+      .join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const link = document.createElement("a")
-    link.href = URL.createObjectURL(blob)
-    link.setAttribute("download", `leads_${format(new Date(), "yyyy-MM-dd")}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute(
+      "download",
+      `leads_${format(new Date(), "yyyy-MM-dd")}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   return (
@@ -125,10 +144,8 @@ export function LeadsPage() {
         <div className="space-y-1">
           <h1 className="text-3xl font-bold">Leads</h1>
           <p className="text-sm text-muted-foreground">
-            Total de {totalLeads} {totalLeads === 1 ? 'lead' : 'leads'}
-            {dateRange?.from && (
-              <> no período selecionado</>
-            )}
+            Total de {totalLeads} {totalLeads === 1 ? "lead" : "leads"}
+            {dateRange?.from && <> no período selecionado</>}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -261,5 +278,5 @@ export function LeadsPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
