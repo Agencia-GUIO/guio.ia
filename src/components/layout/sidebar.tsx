@@ -20,7 +20,7 @@ export function Sidebar({ className }: SidebarProps) {
         <div className="flex items-center gap-2">
           <div className="flex size-8 items-center justify-center">
             <img
-              src={toAbsoluteUrl("/src/public/media/Guio_02.png")}
+              src={toAbsoluteUrl("/src/public/media/Guio_01.png")}
               alt=""
               className="h-7 w-7"
             />
@@ -54,7 +54,7 @@ export function Sidebar({ className }: SidebarProps) {
               })}
             </div>
           </div>
-          <Separator className="mx-4" />
+          {/* <Separator className="mx-4" />
           <div className="px-3 py-2">
             <h2 className="mb-2 px-4 text-sm font-semibold tracking-tight text-muted-foreground">
               Projects
@@ -70,7 +70,7 @@ export function Sidebar({ className }: SidebarProps) {
               </Button>
             </div>
           </div>
-          <Separator className="mx-4" />
+          <Separator className="mx-4" /> */}
 
           <div className="px-3 py-2">
             <div className="space-y-1">
