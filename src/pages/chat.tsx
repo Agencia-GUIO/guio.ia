@@ -122,26 +122,87 @@ export function ChatPage() {
     setLoading(false);
   }
 
-  const sendMessage = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (!selectedCustomer || !newMessage.trim()) return;
-      const message = {
-        message_content: newMessage,
-        status: "sent",
-        role: "assistant" as const,
-        phone: selectedCustomer.celular_cliente,
-        client_id: selectedCustomer.client_id,
-      };
-      const { data, error } = await supabase
-        .from("messages")
-        .insert([message])
-        .select();
-      if (!error && data) setMessages((current) => [...current, data[0]]);
+  // const sendMessage = useCallback(
+  //   async (e: React.FormEvent) => {
+  //     e.preventDefault();
+  //     if (!selectedCustomer || !newMessage.trim()) return;
+  //     const message = {
+  //       message_content: newMessage,
+  //       status: "sent",
+  //       role: "assistant" as const,
+  //       phone: selectedCustomer.celular_cliente,
+  //       client_id: selectedCustomer.client_id,
+  //     };
+  //     const { data, error } = await supabase
+  //       .from("messages")
+  //       .insert([message])
+  //       .select();
+
+  //       if (!error && data) {
+  //         setMessages((current) => [...current, data[0]]);
+
+  //         try {
+  //           await fetch("https://automacao.2be.com.br/webhook-test/guio-ai-wpp", {
+  //             method: "POST",
+  //             headers: {
+  //               "Content-Type": "application/json",
+  //               "Access-Control-Allow-Origin": "*"
+  //             },
+  //             body: JSON.stringify({
+  //               event: "new_message",
+  //               data: data[0],
+  //             }),
+  //           });
+  //         } catch (webhookError) {
+  //           console.error("Erro ao chamar webhook:", webhookError);
+  //         }
+  //       }
+  //     // if (!error && data) setMessages((current) => [...current, data[0]]);
+  //     setNewMessage("");
+  //   },
+  //   [newMessage, selectedCustomer]
+  // );
+  const sendMessage = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedCustomer || !newMessage.trim()) return;
+
+    const message = {
+      message_content: newMessage,
+      status: "sent",
+      role: "assistant" as const,
+      phone: selectedCustomer.celular_cliente,
+      // client_id: selectedCustomer.client_id,
+      company_id: selectedCustomer.company_id,
+    };
+
+    const { data, error } = await supabase.from("messages").insert([message]).select();
+
+    if (!error && data) {
+      setMessages((current) => [...current, data[0]]);
+      try {
+        const response = await fetch("https://hook.2be.com.br/webhook/guio-ai-wpp", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            event: "new_message",
+            data: data[0]
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Webhook error: ${response.status}`);
+        }
+      } catch (webhookError) {
+        console.error("Erro ao chamar webhook:", webhookError);
+      }
+
       setNewMessage("");
-    },
-    [newMessage, selectedCustomer]
-  );
+    }
+  }, [newMessage, selectedCustomer]);
+
 
   function openWhatsApp(phone: string) {
     window.open(`https://wa.me/${phone.replace(/\D/g, "")}`, "_blank");

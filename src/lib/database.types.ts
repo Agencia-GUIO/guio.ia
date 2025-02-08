@@ -16,8 +16,9 @@ export interface Database {
           nome: string
           celular_cliente: string
           timer_is_active: boolean
-          client_id: string
+          client_id?: string
           ativacao: boolean
+          company_id?: string
         }
         Insert: {
           id?: string
@@ -25,8 +26,9 @@ export interface Database {
           nome: string
           celular_cliente: string
           timer_is_active?: boolean
-          client_id: string
+          client_id?: string
           ativacao?: boolean
+          company_id?: string
         }
         Update: {
           id?: string
@@ -36,6 +38,7 @@ export interface Database {
           timer_is_active?: boolean
           client_id?: string
           ativacao?: boolean
+          company_id?: string
         }
       }
       messages: {
