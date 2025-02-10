@@ -24,6 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/lib/database.types";
+import { toast } from "@/components/hooks/use-toast";
 
 type Customer = Database["public"]["Tables"]["customers"]["Row"];
 type Message = Database["public"]["Tables"]["messages"]["Row"];
@@ -52,7 +53,18 @@ export function ChatPage() {
 
   useEffect(() => {
     async function fetchCustomers() {
-      let query = supabase.from("customers").select("*");
+      const { data: user, error: errorAuth } = await supabase.auth.getUser();
+
+      if (errorAuth || !user) {
+        toast({
+          title: "Erro ao buscar Usuario",
+          description: errorAuth?.message,
+        });
+      }
+      let query = supabase
+        .from("customers")
+        .select("*")
+        .eq("company_id", user.user?.user_metadata.company_id);
       if (statusFilter !== "all")
         query = query.eq("ativacao", statusFilter === "active");
       if (dateRange?.from) {
@@ -73,11 +85,22 @@ export function ChatPage() {
 
   useEffect((): (() => Promise<"ok" | "timed out" | "error">) | undefined => {
     if (!selectedCustomer) return;
+
     async function fetchMessages() {
+      const { data: user, error: errorAuth } = await supabase.auth.getUser();
+
+      if (errorAuth || !user) {
+        toast({
+          title: "Erro ao buscar Usuario",
+          description: errorAuth?.message,
+        });
+      }
+
       const { data, error } = await supabase
         .from("messages")
         .select("*")
         .eq("phone", selectedCustomer?.celular_cliente)
+        .eq("company_id", user.user?.user_metadata.company_id)
         .order("created_at", { ascending: true });
       if (!error) setMessages(data);
     }

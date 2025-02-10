@@ -1,4 +1,11 @@
-import { Home, MessageSquare, Settings, Inbox, Lightbulb } from "lucide-react";
+import {
+  Home,
+  MessageSquare,
+  Settings,
+  Inbox,
+  Lightbulb,
+  LifeBuoy,
+} from "lucide-react";
 
 export const routes = [
   {
@@ -26,5 +33,11 @@ export const routes = [
     title: "Settings",
     icon: Settings,
     path: "/settings",
+  },
+
+  {
+    title: "Support",
+    icon: LifeBuoy,
+    path: "/supports",
   },
 ];

@@ -1,19 +1,32 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "../ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { routes } from "@/lib/routes";
 import { useLocation, Link } from "react-router-dom";
-import { ChevronDown, LifeBuoy } from "lucide-react";
 import { toAbsoluteUrl } from "@/public/utils/AssetsHelper";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function Sidebar({ className }: SidebarProps) {
   const location = useLocation();
-  const isActiveSupport = location.pathname === "/supports";
+  const [dtaUser, setUser] = useState<User | null>();
 
+  useEffect(() => {
+    async function handleUser() {
+      const { data, error } = await supabase.auth.getUser();
+
+      if (error) {
+        setUser(null);
+      }
+
+      setUser(data.user);
+    }
+    handleUser();
+  }, []);
   return (
     <div className={cn("flex flex-col", className)}>
       <div className="flex h-16 items-center border-b px-6">
@@ -72,7 +85,7 @@ export function Sidebar({ className }: SidebarProps) {
           </div>
           <Separator className="mx-4" /> */}
 
-          <div className="px-3 py-2">
+          {/* <div className="px-3 py-2">
             <div className="space-y-1">
               <Button
                 key={"/supports"}
@@ -87,7 +100,7 @@ export function Sidebar({ className }: SidebarProps) {
                 <Link to={"/supports"}>Support</Link>
               </Button>
             </div>
-          </div>
+          </div> */}
         </div>
       </ScrollArea>
       <div className="mt-auto border-t p-4">
@@ -95,9 +108,15 @@ export function Sidebar({ className }: SidebarProps) {
           <div className="flex items-center gap-2">
             <div className="size-8 rounded-full bg-muted" />
             <div className="space-y-1">
-              <p className="text-sm font-medium leading-none">shadcn</p>
+              <p className="text-sm font-medium leading-none">
+                {dtaUser ? dtaUser.user_metadata.nome : "Unknow"}
+              </p>
               <p className="text-xs leading-none text-muted-foreground">
-                m@example.com
+                {dtaUser
+                  ? dtaUser.user_metadata.nome +
+                    " - " +
+                    dtaUser.user_metadata.role
+                  : "Unknow"}
               </p>
             </div>
           </div>

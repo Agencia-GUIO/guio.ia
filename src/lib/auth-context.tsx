@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase.auth]);
 
   async function fetchCompany(companyId: string) {
     const { data, error } = await supabase
@@ -148,7 +148,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email_confirm: true,
           user_metadata: {
             nome: data.nome,
-            empresa: dataCompani.name, // Agora passamos o nome correto da empresa
+            empresa: dataCompani.name,
+            company_id: dataCompani.id,
             cargo: data.cargo,
             telefone: data.telefone,
             role: "admin", // Primeiro usuário é sempre admin
