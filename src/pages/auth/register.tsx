@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/lib/supabase";
+import { toAbsoluteUrl } from "@/public/utils/AssetsHelper";
 
 interface Company {
   id: string;
@@ -110,16 +111,20 @@ export function RegisterPage() {
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
         <div className="absolute inset-0 bg-primary" />
         <div className="relative z-20 flex items-center gap-2 text-lg font-medium">
-          <Bot className="h-6 w-6" />
+          <img
+            src={toAbsoluteUrl("/src/public/media/Guio_01.png")}
+            alt=""
+            className="h-8 w-8"
+          />
           GUIO.AI
         </div>
         <div className="relative z-20 mt-auto">
           <blockquote className="space-y-2">
             <p className="text-lg">
-              "Com GUIO.AI, conseguimos automatizar nosso atendimento e melhorar
-              significativamente a experiência dos nossos clientes."
+              Estratégias para um mundo cada vez mais digital
             </p>
-            <footer className="text-sm">Carlos Silva</footer>
+
+            <footer className="text-sm"> Rafael Riedel</footer>
           </blockquote>
         </div>
       </div>
