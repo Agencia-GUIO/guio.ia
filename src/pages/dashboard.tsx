@@ -6,7 +6,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { MessageSquare, Clock, DollarSign, Gauge } from "lucide-react";
+import { MessageSquare, DollarSign, Gauge } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   AreaChart,
@@ -21,14 +21,14 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Label,
 } from "recharts";
 import { supabase } from "@/lib/supabase";
-import { toast } from "@/components/hooks/use-toast";
+import { useToast } from "@/components/hooks/use-toast";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))"];
 
 export function DashboardPage() {
+  const { toast } = useToast();
   const [dashboardData, setDashboardData] = useState({
     totalConversas: 0,
     custoTotal: 0,
@@ -83,6 +83,7 @@ export function DashboardPage() {
             description: error?.message,
           });
         }
+
         // Fetch messages data
         const { data: messages, error: messagesError } = await supabase
           .from("messages")
@@ -109,6 +110,7 @@ export function DashboardPage() {
 
         // Exemplo de cálculo do tempo médio (em segundos)
         const tempoMedioResposta = "0.0";
+
         const custoPorConversa =
           totalConversas > 0
             ? (Number(custoTotal) / totalConversas).toFixed(2)
@@ -247,15 +249,15 @@ export function DashboardPage() {
       }%`,
       changeType: dashboardData.taxaChange >= 0 ? "positive" : "negative",
     },
-    {
-      title: "Tempo Médio de Resposta",
-      value: `${dashboardData.tempoMedioResposta}s`,
-      icon: Clock,
-      change: `${dashboardData.tempoChange > 0 ? "+" : ""}${
-        dashboardData.tempoChange
-      }%`,
-      changeType: dashboardData.tempoChange >= 0 ? "positive" : "negative",
-    },
+    // {
+    //   title: "Tempo Médio de Resposta",
+    //   value: `${dashboardData.tempoMedioResposta}s`,
+    //   icon: Clock,
+    //   change: `${dashboardData.tempoChange > 0 ? "+" : ""}${
+    //     dashboardData.tempoChange
+    //   }%`,
+    //   changeType: dashboardData.tempoChange >= 0 ? "positive" : "negative",
+    // },
     {
       title: "Custo por Conversa",
       value: `$ ${dashboardData.custoPorConversa.toLocaleString("pt-BR", {

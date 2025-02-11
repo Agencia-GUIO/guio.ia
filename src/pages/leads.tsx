@@ -18,9 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
-import { toast } from "@/components/hooks/use-toast";
+import { useToast } from "@/components/hooks/use-toast";
 
 type DateRange = { from: Date; to?: Date };
 type Lead = {
@@ -42,6 +41,7 @@ export function LeadsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalLeads, setTotalLeads] = useState(0);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchLeads();

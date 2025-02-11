@@ -24,7 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
 import type { Database } from "@/lib/database.types";
-import { toast } from "@/components/hooks/use-toast";
+import { useToast } from "@/components/hooks/use-toast";
 
 type Customer = Database["public"]["Tables"]["customers"]["Row"];
 type Message = Database["public"]["Tables"]["messages"]["Row"];
@@ -50,6 +50,7 @@ export function ChatPage() {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     async function fetchCustomers() {
@@ -342,15 +343,16 @@ export function ChatPage() {
                       setSidebarOpen(false);
                     }}
                     className={cn(
-                      "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent",
+                      "flex w-full max-w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent ",
                       selectedCustomer?.id === customer.id && "bg-accent"
                     )}
+                    style={{ wordBreak: "break-word", whiteSpace: "normal" }} // Permite quebra de linha
                   >
                     <div className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full bg-primary/10">
                       <User className="h-5 w-5 text-primary" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-medium">
+                      <div className="font-medium break-words">
                         {customer.nome}
                       </div>
                       <div className="truncate text-xs text-muted-foreground">
@@ -461,6 +463,22 @@ export function ChatPage() {
                 ))}
               </div>
             </ScrollArea>
+            <div className="border-t bg-background p-4">
+              <form onSubmit={sendMessage} className="mx-auto max-w-3xl">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Digite sua mensagem..."
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    className="text-sm"
+                  />
+                  <Button type="submit" disabled={!newMessage.trim()}>
+                    <SendIcon className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Enviar</span>
+                  </Button>
+                </div>
+              </form>
+            </div>
           </>
         ) : (
           <div className="flex flex-1 items-center justify-center p-4 text-center">
