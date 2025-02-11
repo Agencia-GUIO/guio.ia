@@ -23,19 +23,10 @@ import {
   ResponsiveContainer,
   Label,
 } from "recharts";
-import { adminAuthClient, supabase } from "@/lib/supabase";
-import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/lib/supabase";
 import { toast } from "@/components/hooks/use-toast";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))"];
-
-type TSituational = {
-  name: string;
-  quantity: string | number;
-  percentage: string;
-};
-
-// supabase.auth.signOut();
 
 export function DashboardPage() {
   const [dashboardData, setDashboardData] = useState({
@@ -229,7 +220,7 @@ export function DashboardPage() {
     },
     {
       title: "Custo Total",
-      value: `R$ ${dashboardData.custoTotal.toLocaleString("pt-BR", {
+      value: `$ ${dashboardData.custoTotal.toLocaleString("pt-BR", {
         minimumFractionDigits: 2,
       })}`,
       icon: DollarSign,
@@ -267,7 +258,7 @@ export function DashboardPage() {
     },
     {
       title: "Custo por Conversa",
-      value: `R$ ${dashboardData.custoPorConversa.toLocaleString("pt-BR", {
+      value: `$ ${dashboardData.custoPorConversa.toLocaleString("pt-BR", {
         minimumFractionDigits: 2,
       })}`,
       icon: DollarSign,
@@ -279,54 +270,12 @@ export function DashboardPage() {
     },
   ];
 
-  const situations_test_data = [
-    { name: "Retomada de Cadastro", quantity: 32 },
-    { name: "Problemas com CEMIG", quantity: 28 },
-    { name: "Cadastro Duplicado", quantity: 15 },
-    { name: "Dúvidas sobre o Serviço", quantity: 25 },
-    { name: "Problemas de Acesso", quantity: 19 },
-    { name: "Cadastros Finalizados", quantity: 45 },
-  ];
-
-  const totalQuantity = situations_test_data.reduce(
-    (sum, item) => sum + item.quantity,
-    0
-  );
-
-  const formattedTestData = situations_test_data.map((item) => ({
-    ...item,
-    percentage: ((item.quantity / totalQuantity) * 100).toFixed(1) + "%",
-  }));
-
-  const [situationData, setSituationData] = useState(formattedTestData);
-
-  // useEffect(() => {
-  //   async function fetchSituationData() {
-  //     try {
-  //       const { data, error } = await supabase.from("situations").select("*");
-  //       if (error) throw error;
-
-  //       const total = data.reduce((sum, item) => sum + item.quantity, 0);
-  //       const formattedData = data.map((item) => ({
-  //         name: item.situation,
-  //         quantity: item.quantity,
-  //         percentage: ((item.quantity / total) * 100).toFixed(1) + "%",
-  //       }));
-
-  //       setSituationData(formattedData);
-  //     } catch (error) {
-  //       console.error("Error fetching situation data:", error);
-  //     }
-  //   }
-  //   fetchSituationData();
-  // }, []);
-
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
+    <div className="space-y-8 p-4 sm:p-6 md:p-8 w-full max-w-6xl mx-auto">
+      <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {stats.map((stat) => (
           <Card key={stat.title} className="hover:border-primary/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -353,7 +302,7 @@ export function DashboardPage() {
       </div>
 
       {/* Charts Grid */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
         {/* Status Chart */}
         <Card>
           <CardHeader>
@@ -363,7 +312,7 @@ export function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex h-[300px] items-center justify-center gap-8">
+            <div className="flex flex-col lg:flex-row h-auto lg:h-[300px] items-center justify-center gap-8">
               <div className="h-[200px] w-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -384,97 +333,25 @@ export function DashboardPage() {
                           strokeWidth={2}
                         />
                       ))}
-                      <Label
-                        content={({ viewBox: { cx, cy } }) => (
-                          <>
-                            <text
-                              x={cx}
-                              y={cy - 5}
-                              textAnchor="middle"
-                              dominantBaseline="central"
-                              className="fill-foreground text-2xl font-bold"
-                            >
-                              {statusDetails.totalConversations}
-                            </text>
-                            <text
-                              x={cx}
-                              y={cy + 15}
-                              textAnchor="middle"
-                              dominantBaseline="central"
-                              className="fill-muted-foreground text-xs"
-                            >
-                              Total
-                            </text>
-                          </>
-                        )}
-                      />
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-
-              <div className="flex-1 space-y-6">
-                <div className="grid grid-cols-2 gap-8">
+              <div className="flex-1 space-y-4 text-center lg:text-left">
+                <p className="text-lg font-semibold">
+                  Total de {statusDetails.totalConversations} conversas
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: COLORS[0] }}
-                      />
-                      <span className="text-sm font-medium">Ativas</span>
-                    </div>
-                    <div>
-                      <div className="flex items-baseline gap-2">
-                        <p className="text-2xl font-bold text-emerald-500">
-                          {statusDetails.activePercentage.toFixed(1)}%
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          ({statusData[0].value})
-                        </p>
-                      </div>
-                      {statusDetails.lastActivated && (
-                        <p className="text-xs text-muted-foreground">
-                          Última:{" "}
-                          {statusDetails.lastActivated.toLocaleDateString()}
-                        </p>
-                      )}
-                    </div>
+                    <p className="text-sm font-medium">
+                      Ativas: {statusDetails.activePercentage.toFixed(1)}%
+                    </p>
                   </div>
-
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="h-3 w-3 rounded-full"
-                        style={{ backgroundColor: COLORS[1] }}
-                      />
-                      <span className="text-sm font-medium">Inativas</span>
-                    </div>
-                    <div>
-                      <div className="flex items-baseline gap-2">
-                        <p className="text-2xl font-bold text-red-500">
-                          {statusDetails.inactivePercentage.toFixed(1)}%
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          ({statusData[1].value})
-                        </p>
-                      </div>
-                      {statusDetails.lastDeactivated && (
-                        <p className="text-xs text-muted-foreground">
-                          Última:{" "}
-                          {statusDetails.lastDeactivated.toLocaleDateString()}
-                        </p>
-                      )}
-                    </div>
+                    <p className="text-sm font-medium">
+                      Inativas: {statusDetails.inactivePercentage.toFixed(1)}%
+                    </p>
                   </div>
-                </div>
-
-                <div className="space-y-1 text-sm text-muted-foreground">
-                  <p>
-                    • Total de {statusDetails.totalConversations} conversas
-                    monitoradas
-                  </p>
-                  <p>• {statusData[0].value} conversas ativas em andamento</p>
-                  <p>• {statusData[1].value} conversas aguardando ativação</p>
                 </div>
               </div>
             </div>
@@ -488,7 +365,7 @@ export function DashboardPage() {
             <CardDescription>Cliente vs GUIO.AI</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[250px] sm:h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={distributionData}>
                   <CartesianGrid
@@ -497,17 +374,11 @@ export function DashboardPage() {
                   />
                   <XAxis
                     dataKey="name"
-                    stroke="hsl(var(--muted-foreground))"
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
                   />
-                  <YAxis
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
+                  <YAxis fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                     {distributionData.map((entry, index) => (
@@ -524,13 +395,13 @@ export function DashboardPage() {
         </Card>
 
         {/* Cost Chart */}
-        <Card className="md:col-span-2">
+        <Card className="sm:col-span-2">
           <CardHeader>
             <CardTitle>Custos por Dia</CardTitle>
             <CardDescription>Evolução dos custos no período</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[250px] sm:h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={costData}>
                   <CartesianGrid
@@ -539,17 +410,11 @@ export function DashboardPage() {
                   />
                   <XAxis
                     dataKey="date"
-                    stroke="hsl(var(--muted-foreground))"
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
                   />
-                  <YAxis
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
+                  <YAxis fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip />
                   <Area
                     type="monotone"
@@ -564,68 +429,6 @@ export function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Distribuição de Situações</CardTitle>
-          <CardDescription>
-            Dados dinâmicos sobre as ocorrências
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={situationData} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis
-                  type="number"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  dataKey="name"
-                  type="category"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  width={150}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip />
-                <Bar
-                  dataKey="quantity"
-                  fill="hsl(var(--primary))"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <table className="w-full mt-4 text-sm border-collapse border border-gray-700">
-            <thead>
-              <tr className="bg-gray-800 text-white">
-                <th className="p-2 border border-gray-700">Situação</th>
-                <th className="p-2 border border-gray-700">Quantidade</th>
-                <th className="p-2 border border-gray-700">Porcentagem</th>
-              </tr>
-            </thead>
-            <tbody>
-              {situationData.map((item, index) => (
-                <tr key={index} className="border border-gray-700">
-                  <td className="p-2 border border-gray-700">{item.name}</td>
-                  <td className="p-2 border border-gray-700 text-center">
-                    {item.quantity}
-                  </td>
-                  <td className="p-2 border border-gray-700 text-center">
-                    {item.percentage}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
     </div>
   );
 }

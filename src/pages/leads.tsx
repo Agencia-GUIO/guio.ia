@@ -139,25 +139,19 @@ export function LeadsPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold">Leads</h1>
+    <div className="space-y-8 p-4 sm:p-6 md:p-8 w-full max-w-6xl mx-auto">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
+        <div className="text-center sm:text-left w-full sm:w-auto">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold">Leads</h1>
           <p className="text-sm text-muted-foreground">
             Total de {totalLeads} {totalLeads === 1 ? "lead" : "leads"}
             {dateRange?.from && <> no período selecionado</>}
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
           <Popover>
             <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "justify-start text-left font-normal",
-                  !dateRange && "text-muted-foreground"
-                )}
-              >
+              <Button variant="outline" className="w-full sm:w-auto">
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {dateRange?.from ? (
                   dateRange.to ? (
@@ -185,75 +179,77 @@ export function LeadsPage() {
               />
             </PopoverContent>
           </Popover>
-
-          <Button onClick={exportCSV}>
+          <Button onClick={exportCSV} className="w-full sm:w-auto">
             <Download className="mr-2 h-4 w-4" />
             Exportar CSV
           </Button>
         </div>
       </div>
-
       <Card>
         <CardHeader>
           <CardTitle>Lista de Leads</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data/Hora</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Telefone</TableHead>
-                <TableHead>Status da IA</TableHead>
-                <TableHead>Total de Mensagens</TableHead>
-                <TableHead>Última Mensagem</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
+          <div className="overflow-x-auto">
+            <Table className="min-w-full">
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                  </TableCell>
+                  <TableHead>Data/Hora</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Telefone</TableHead>
+                  <TableHead>Status da IA</TableHead>
+                  <TableHead>Total de Mensagens</TableHead>
+                  <TableHead>Última Mensagem</TableHead>
                 </TableRow>
-              ) : leads.length > 0 ? (
-                leads.map((lead) => (
-                  <TableRow key={lead.id}>
-                    <TableCell>
-                      {format(new Date(lead.created_at), "dd/MM/yy HH:mm")}
-                    </TableCell>
-                    <TableCell>{lead.nome}</TableCell>
-                    <TableCell>{lead.celular_cliente}</TableCell>
-                    <TableCell>
-                      <span
-                        className={cn(
-                          "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium",
-                          lead.timer_is_active
-                            ? "bg-primary/10 text-primary"
-                            : "bg-muted text-muted-foreground"
-                        )}
-                      >
-                        {lead.timer_is_active ? "Ativa" : "Inativa"}
-                      </span>
-                    </TableCell>
-                    <TableCell>{lead.total_messages}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">
-                      {lead.message_content}
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    Nenhum lead encontrado
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-
+                ) : leads.length > 0 ? (
+                  leads.map((lead) => (
+                    <TableRow key={lead.id}>
+                      <TableCell>
+                        {format(new Date(lead.created_at), "dd/MM/yy HH:mm")}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">
+                        {lead.nome}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">
+                        {lead.celular_cliente}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                            lead.timer_is_active
+                              ? "bg-primary/10 text-primary"
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {lead.timer_is_active ? "Ativa" : "Inativa"}
+                        </span>
+                      </TableCell>
+                      <TableCell>{lead.total_messages}</TableCell>
+                      <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]">
+                        {lead.message_content}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      Nenhum lead encontrado
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
           {totalPages > 1 && (
-            <div className="mt-4 flex items-center justify-center gap-2">
+            <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-2 w-full">
               <Button
                 variant="outline"
                 size="sm"
