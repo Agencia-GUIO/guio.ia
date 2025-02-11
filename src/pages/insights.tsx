@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+
 import {
   Card,
   CardContent,
@@ -16,28 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BarChart, LineChart } from "recharts";
 import { supabase } from "@/lib/supabase";
-import { toast } from "@/components/hooks/use-toast";
+import { useToast } from "@/components/hooks/use-toast";
 
 import axios from "axios";
-import { useAuth } from "@/lib/auth-context";
-import {
-  CartesianGrid,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Bar,
-} from "recharts";
-import {
-  Bot,
-  ChevronLeft,
-  ChevronRight,
-  Lightbulb,
-  Loader2,
-  TrendingUp,
-} from "lucide-react";
+import { Bot, Lightbulb, LineChart, Loader2, TrendingUp } from "lucide-react";
 
 interface InsightAnalysis {
   id: string;
@@ -68,6 +50,7 @@ export function InsightsPage() {
   const [insights, setInsights] = useState<InsightAnalysis[]>([]);
   const [currentInsightIndex, setCurrentInsightIndex] = useState(0);
   const [user, setUser] = useState<{ id: string } | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Get the current user
@@ -126,6 +109,7 @@ export function InsightsPage() {
           },
         }
       );
+      return response;
     } catch (error: any) {}
   }
 
@@ -141,8 +125,6 @@ export function InsightsPage() {
         description: error?.message,
       });
     }
-    console.log("User Metadata:", authData.user?.user_metadata);
-    console.log("Company ID:", authData.user?.user_metadata?.company_id);
 
     const { data: messages, error: errorMessage } = await supabase
       .from("messages")
@@ -164,7 +146,43 @@ export function InsightsPage() {
           }) => rest
         );
 
-        await sendMessageWebHook(filteredMessages);
+        const data = await sendMessageWebHook(filteredMessages);
+
+        if (!data) {
+          throw new Error("Erro: Retorno de sendMessageWebHook é inválido!");
+        }
+
+        const { error: insertError } = await supabase.from("insights").insert([
+          {
+            company_id: authData.user?.user_metadata.company_id,
+            insights: data.data.output.insights, // Armazena o retorno da função
+            created_at: new Date().toISOString(),
+            period: selectedPeriod,
+          },
+        ]);
+
+        if (insertError) {
+          console.error("Erro ao inserir no Supabase:", insertError);
+          throw insertError;
+        }
+
+        const { data: insightsData, error: fetchError } = await supabase
+          .from("insights")
+          .select("*")
+          .eq("company_id", authData.user?.user_metadata.company_id)
+          .order("created_at", { ascending: false });
+
+        if (fetchError) {
+          console.error("Erro ao buscar insights:", fetchError);
+          throw fetchError;
+        }
+
+        setInsights(
+          insightsData.map((item) => ({
+            ...item,
+            created_at: new Date(item.created_at),
+          }))
+        );
 
         toast({
           title: "Sucesso",
@@ -185,26 +203,26 @@ export function InsightsPage() {
 
   const currentInsight = insights[currentInsightIndex];
 
-  const situations_test_data = [
-    { name: "Retomada de Cadastro", quantity: 32 },
-    { name: "Problemas com CEMIG", quantity: 28 },
-    { name: "Cadastro Duplicado", quantity: 15 },
-    { name: "Dúvidas sobre o Serviço", quantity: 25 },
-    { name: "Problemas de Acesso", quantity: 19 },
-    { name: "Cadastros Finalizados", quantity: 45 },
-  ];
+  // const situations_test_data = [
+  //   { name: "Retomada de Cadastro", quantity: 32 },
+  //   { name: "Problemas com CEMIG", quantity: 28 },
+  //   { name: "Cadastro Duplicado", quantity: 15 },
+  //   { name: "Dúvidas sobre o Serviço", quantity: 25 },
+  //   { name: "Problemas de Acesso", quantity: 19 },
+  //   { name: "Cadastros Finalizados", quantity: 45 },
+  // ];
 
-  const totalQuantity = situations_test_data.reduce(
-    (sum, item) => sum + item.quantity,
-    0
-  );
+  // const totalQuantity = situations_test_data.reduce(
+  //   (sum, item) => sum + item.quantity,
+  //   0
+  // );
 
-  const formattedTestData = situations_test_data.map((item) => ({
-    ...item,
-    percentage: ((item.quantity / totalQuantity) * 100).toFixed(1) + "%",
-  }));
+  // const formattedTestData = situations_test_data.map((item) => ({
+  //   ...item,
+  //   percentage: ((item.quantity / totalQuantity) * 100).toFixed(1) + "%",
+  // }));
 
-  const [situationData, setSituationData] = useState(formattedTestData);
+  // const [situationData, setSituationData] = useState(formattedTestData);
 
   if (!insights.length) {
     return (
@@ -323,9 +341,114 @@ export function InsightsPage() {
             <p className="text-sm text-muted-foreground">
               {currentInsight.insights.summary}
             </p>
+
+            <div className="mt-6">
+              <h4 className="mb-4 text-sm font-medium">Principais Tópicos</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {currentInsight.insights.topics.map((topic, index) => (
+                  <div
+                    key={index}
+                    className="rounded-md bg-secondary p-2 text-xs text-secondary-foreground"
+                  >
+                    {topic}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <h4 className="mb-4 text-sm font-medium">
+                Análise de Sentimento
+              </h4>
+              <div className="flex gap-4">
+                <div className="flex-1 space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span>Positivo</span>
+                    <span>{currentInsight.insights.sentiment.positive}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-emerald-500"
+                      style={{
+                        width: `${currentInsight.insights.sentiment.positive}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="flex-1 space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span>Neutro</span>
+                    <span>{currentInsight.insights.sentiment.neutral}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-blue-500"
+                      style={{
+                        width: `${currentInsight.insights.sentiment.neutral}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="flex-1 space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span>Negativo</span>
+                    <span>{currentInsight.insights.sentiment.negative}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-red-500"
+                      style={{
+                        width: `${currentInsight.insights.sentiment.negative}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <LineChart className="h-4 w-4 text-primary" />
+              <CardTitle>Descobertas</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {currentInsight.insights.findings.map((finding, index) => (
+                <li key={index} className="flex items-start gap-2">
+                  <div className="mt-1 h-1.5 w-1.5 rounded-full bg-primary" />
+                  <span className="text-sm">{finding}</span>
+                </li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
         <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Lightbulb className="h-4 w-4 text-primary" />
+              <CardTitle>Recomendações</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-4">
+              {currentInsight.insights.recommendations.map(
+                (recommendation, index) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      {index + 1}
+                    </div>
+                    <span className="text-sm">{recommendation}</span>
+                  </li>
+                )
+              )}
+            </ul>
+          </CardContent>
+        </Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>Distribuição de Situações</CardTitle>
           </CardHeader>
@@ -363,7 +486,7 @@ export function InsightsPage() {
               </ResponsiveContainer>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </div>
   );

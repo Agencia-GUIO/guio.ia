@@ -87,8 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .eq("id", companyId)
       .single();
 
-    console.log("AQIUI");
-
     if (!error && data) {
       setCompany(data);
     }
