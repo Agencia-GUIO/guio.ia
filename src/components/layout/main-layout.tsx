@@ -38,6 +38,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col w-full">
+        <Button variant="ghost" size="icon" onClick={handleLogout} className="hidden lg:flex">
+          <LogOut className="h-4 w-4" />
+          <span className="sr-only">Sair</span>
+        </Button>
         {/* Top Navbar for Mobile */}
         <div className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 lg:hidden">
           <Button
