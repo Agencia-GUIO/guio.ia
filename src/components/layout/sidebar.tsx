@@ -9,9 +9,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 
-interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
-
-export function Sidebar({ className }: SidebarProps) {
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
+  setSidebarOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}
+export function Sidebar({ className, setSidebarOpen }: SidebarProps) {
   const location = useLocation();
   const [dtaUser, setUser] = useState<User | null>();
 
@@ -49,6 +50,7 @@ export function Sidebar({ className }: SidebarProps) {
                 const isActive = location.pathname === route.path;
                 return (
                   <Button
+                    onClick={() => setSidebarOpen(false)}
                     key={route.path}
                     variant={isActive ? "secondary" : "ghost"}
                     className={cn(

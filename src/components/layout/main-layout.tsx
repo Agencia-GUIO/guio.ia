@@ -34,6 +34,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           "fixed inset-y-0 left-0 z-50 w-72 border-r bg-background transition-transform lg:static lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
+        setSidebarOpen={setSidebarOpen}
       />
 
       {/* Main Content */}
@@ -53,11 +54,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             <span className="sr-only">Toggle sidebar</span>
           </Button>
           <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
+            {/* <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
               <div className="text-primary">
                 <Bot className="h-5 w-5" />
               </div>
-            </div>
+            </div> */}
             <h1 className="text-lg font-semibold text-foreground">GUIO.AI</h1>
           </div>
           <Button
