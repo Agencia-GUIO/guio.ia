@@ -33,7 +33,7 @@ export function Sidebar({ className }: SidebarProps) {
         <div className="flex items-center gap-2">
           <div className="flex size-8 items-center justify-center">
             <img
-              src={toAbsoluteUrl("/src/public/media/Guio_01.png")}
+              src="/media/Guio_01.png"
               alt=""
               className="h-7 w-7"
             />
