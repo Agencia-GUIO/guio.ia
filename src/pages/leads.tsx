@@ -28,6 +28,7 @@ type Lead = {
   nome: string;
   celular_cliente: string;
   timer_is_active: boolean;
+  ativacao: boolean;
   message_content: string;
   total_messages: number;
 };
@@ -224,12 +225,12 @@ export function LeadsPage() {
                       <TableCell>
                         <span
                           className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                            lead.timer_is_active
+                            lead.ativacao
                               ? "bg-primary/10 text-primary"
                               : "bg-muted text-muted-foreground"
                           }`}
                         >
-                          {lead.timer_is_active ? "Ativa" : "Inativa"}
+                          {lead.ativacao ? "Ativa" : "Inativa"}
                         </span>
                       </TableCell>
                       <TableCell>{lead.total_messages}</TableCell>
