@@ -14,17 +14,21 @@ export default function SupportPage() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   async function handleSubmit() {
     if (!subject || !message) {
-      alert("Por favor, preencha todos os campos.");
+      setSuccess("");
+      setError("Por favor, preencha todos os campos.")
       return;
     }
 
     setLoading(true);
 
     setTimeout(() => {
-      alert("Mensagem enviada com sucesso!");
+      setError("")
+      setSuccess("Mensagem enviada com sucesso!")
       setSubject("");
       setMessage("");
       setLoading(false);
@@ -50,6 +54,8 @@ export default function SupportPage() {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />
+          {success && <p className="text-green-500 text-sm">{success}</p>}
+          {error && <p className="text-red-500 text-sm">{error}</p>}
           <Button onClick={handleSubmit} disabled={loading}>
             {loading ? "Enviando..." : "Enviar Mensagem"}
           </Button>
