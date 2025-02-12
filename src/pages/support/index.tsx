@@ -53,6 +53,8 @@ export default function SupportPage() {
             placeholder="Digite sua mensagem..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            className="resize-none"
+            rows={5}
           />
           {success && <p className="text-green-500 text-sm">{success}</p>}
           {error && <p className="text-red-500 text-sm">{error}</p>}
