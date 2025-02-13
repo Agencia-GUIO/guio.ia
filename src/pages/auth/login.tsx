@@ -69,7 +69,7 @@ export function LoginPage() {
         <div className="absolute inset-0 bg-primary" />
         <div className="relative z-20 flex items-center gap-2 text-lg font-medium">
           <img
-            src={toAbsoluteUrl("/src/public/media/Guio_01.png")}
+            src="/media/Guio_01.png"
             alt=""
             className="h-8 w-8"
           />
