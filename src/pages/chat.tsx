@@ -127,8 +127,7 @@ export function ChatPage() {
 
           // Atualizar o campo last_message_answered no cliente correspondente
           if (newMessage.customer_id) {
-            const lastMessageAnswered =
-              newMessage.role === "customer" ? false : true;
+            const lastMessageAnswered = !(newMessage.role === "customer");
 
             const { error } = await supabase
               .from("customers")
@@ -188,9 +187,9 @@ export function ChatPage() {
     setLoading(false);
   }
 
-  async function toogleCustomerUpdateStts(customer: Customer) {
+  async function changeCustomer(customer: Customer) {
+    setLoading(true);
     if (customer.last_message_answered == false) {
-      setLoading(true);
       const { error } = await supabase
         .from("customers")
         .update({
@@ -210,10 +209,7 @@ export function ChatPage() {
           setSelectedCustomer({ ...customer, last_message_answered: true });
         }
       }
-      setLoading(false);
-      return;
     }
-    setLoading(true);
     setSelectedCustomer(customer);
     setLoading(false);
   }
@@ -264,8 +260,6 @@ export function ChatPage() {
 
         setNewMessage("");
       }
-
-      // const;
     },
     [newMessage, selectedCustomer]
   );
@@ -413,7 +407,7 @@ export function ChatPage() {
                       <button
                         key={customer.id}
                         onClick={() => {
-                          toogleCustomerUpdateStts(customer);
+                          changeCustomer(customer);
 
                           setSidebarOpen(false);
                         }}
