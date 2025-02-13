@@ -19,7 +19,8 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/hooks/use-toast";
 
 import axios from "axios";
-import { Bot, Lightbulb, LineChart, Loader2, TrendingUp } from "lucide-react";
+import { BarChart, Bot, Lightbulb, LineChart, Loader2, TrendingUp } from "lucide-react";
+import { CartesianGrid, XAxis, YAxis, Tooltip, Bar, ResponsiveContainer } from "recharts";
 
 interface InsightAnalysis {
   id: string;
@@ -35,6 +36,32 @@ interface InsightAnalysis {
     };
     findings: string[];
     recommendations: string[];
+    situations: {
+      "Retomada de Cadastro": {
+        quantity: string;
+        percentage: string;
+      };
+      "Problemas com CEMIG": {
+        quantity: string;
+        percentage: string;
+      };
+      "Cadastro Duplicado": {
+        quantity: string;
+        percentage: string;
+      };
+      "Dúvidas sobre o Serviço": {
+        quantity: string;
+        percentage: string;
+      };
+      "Problemas de Acesso": {
+        quantity: string;
+        percentage: string;
+      };
+      "Cadastros Finalizados": {
+        quantity: string;
+        percentage: string;
+      };
+    }
   };
 }
 
@@ -202,7 +229,6 @@ export function InsightsPage() {
   }
 
   const currentInsight = insights[currentInsightIndex];
-
   // const situations_test_data = [
   //   { name: "Retomada de Cadastro", quantity: 32 },
   //   { name: "Problemas com CEMIG", quantity: 28 },
