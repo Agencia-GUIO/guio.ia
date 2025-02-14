@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import axios from "axios";
+import { supabase } from "@/lib/supabase";
 
 export default function SupportPage() {
   const [subject, setSubject] = useState("");
@@ -20,19 +22,38 @@ export default function SupportPage() {
   async function handleSubmit() {
     if (!subject || !message) {
       setSuccess("");
-      setError("Por favor, preencha todos os campos.")
+      setError("Por favor, preencha todos os campos.");
       return;
     }
 
-    setLoading(true);
+    const { data, error } = await supabase.auth.getUser();
 
-    setTimeout(() => {
-      setError("")
-      setSuccess("Mensagem enviada com sucesso!")
-      setSubject("");
-      setMessage("");
+    if (data && !error) {
+    }
+    setLoading(true);
+    const dataMessage = {
+      client_email: data.user?.email,
+      subject: subject,
+      content: message,
+    };
+
+    try {
+      const response = await axios.post(
+        `https://hook.2be.com.br/webhook/send-email-support`,
+        dataMessage, // Enviando o corpo da requisição
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+          },
+        }
+      );
       setLoading(false);
-    }, 2000);
+      window.location.reload();
+      return response;
+    } catch (error: any) {}
   }
 
   return (
