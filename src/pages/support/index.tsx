@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import axios from "axios";
 import { supabase } from "@/lib/supabase";
+import { useToast } from "@/components/hooks/use-toast";
 
 export default function SupportPage() {
   const [subject, setSubject] = useState("");
@@ -18,6 +19,7 @@ export default function SupportPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const { toast } = useToast();
 
   async function handleSubmit() {
     if (!subject || !message) {
@@ -51,9 +53,22 @@ export default function SupportPage() {
         }
       );
       setLoading(false);
-      window.location.reload();
+      toast({
+        title: "Mensagem enviada com sucesso",
+        description: "O porteiro foi cadastrado com sucesso.",
+      });
+      // window.location.reload();
       return response;
-    } catch (error: any) {}
+    } catch (error: any) {
+      setLoading(false);
+      console.error("Erro ao enviar mensagem:", error);
+      toast({
+        title: "Erro ao enviar mensagem",
+        description:
+          "Houve um problema ao enviar sua mensagem. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   }
 
   return (

@@ -1,13 +1,13 @@
 import { Sidebar } from "./sidebar";
 import { Button } from "@/components/ui/button";
-import { Menu, Bot } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { LogOut } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 
-export function MainLayout({ children }: { children: React.ReactNode }) {
+export function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -39,7 +39,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col w-full">
-        <Button variant="ghost" size="icon" onClick={handleLogout} className="hidden lg:flex">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleLogout}
+          className="hidden lg:flex"
+        >
           <LogOut className="h-4 w-4" />
           <span className="sr-only">Sair</span>
         </Button>
@@ -73,7 +78,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Main Content Area */}
-        <main className="flex-1 p-4 sm:p-6 md:p-8 w-full">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 md:p-8 w-full">
+          <Outlet />
+        </main>
       </div>
     </div>
   );
