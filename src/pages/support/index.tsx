@@ -53,6 +53,7 @@ export default function SupportPage() {
       setLoading(false);
       setSubject("")
       setMessage("")
+      setError("")
       setSuccess("E-mail enviada com sucesso!")
       // window.location.reload();
       return response;
