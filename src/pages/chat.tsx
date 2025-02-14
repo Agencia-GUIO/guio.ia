@@ -283,6 +283,11 @@ export function ChatPage() {
     customer.nome.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  function removePrefixAutomationFromMessage(message: string){
+    const prefix = "*** AUTOMAÇÃO CUSTOMER ***";
+    return message.replace(prefix, "").trim();
+  }
+
   return (
     <div className="relative flex h-[calc(100vh-4rem)] bg-background">
       <div
@@ -540,7 +545,7 @@ export function ChatPage() {
                             : "bg-accent"
                         )}
                       >
-                        <p className="break-words">{message.message_content}</p>
+                        <p className="break-words">{removePrefixAutomationFromMessage(message.message_content)}</p>
                       </div>
                     </div>
                   </div>
@@ -565,7 +570,7 @@ export function ChatPage() {
             </div>
           </>
         ) : (
-          <div className="flex flex-1 items-center justify-center p-4 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center p-4 text-center">
             <h2 className="text-lg font-semibold">Nenhum chat selecionado</h2>
             <p className="text-sm text-muted-foreground">
               Selecione uma conversa para começar

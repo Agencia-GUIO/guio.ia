@@ -115,8 +115,7 @@ export function DashboardPage() {
           somaInterval += msg.response_interval;
         });
         // Exemplo de cálculo do tempo médio (em segundos)
-        const tempoMedioResposta = Math.round(somaInterval / messagesAssistantCount);
-
+        const tempoMedioResposta = Math.round(somaInterval / messagesAssistantCount) || 0;
         const custoPorConversa =
           totalConversas > 0
             ? (Number(custoTotal) / totalConversas).toFixed(2)

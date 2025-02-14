@@ -113,6 +113,11 @@ export function LeadsPage() {
     }
   }
 
+  function removePrefixAutomationFromMessage(message: string){
+    const prefix = "*** AUTOMAÇÃO CUSTOMER ***";
+    return message.replace(prefix, "").trim();
+  }
+
   function exportCSV() {
     const csvContent = [
       ["Name", "Phone", "Status", "Messages", "LastInteraction"],
@@ -235,7 +240,7 @@ export function LeadsPage() {
                       </TableCell>
                       <TableCell>{lead.total_messages}</TableCell>
                       <TableCell className="whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]">
-                        {lead.message_content}
+                        {removePrefixAutomationFromMessage(lead.message_content)}
                       </TableCell>
                     </TableRow>
                   ))
