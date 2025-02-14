@@ -54,6 +54,7 @@ export interface Database {
           tokens: number;
           custo_tokens: number;
           customer_id: number;
+          response_interval: number;
         };
         Insert: {
           id?: string;
@@ -65,6 +66,7 @@ export interface Database {
           client_id: string;
           tokens?: number;
           custo_tokens?: number;
+          response_interval: number;
         };
         Update: {
           id?: string;
@@ -76,6 +78,7 @@ export interface Database {
           client_id?: string;
           tokens?: number;
           custo_tokens?: number;
+          response_interval: number;
         };
       };
     };

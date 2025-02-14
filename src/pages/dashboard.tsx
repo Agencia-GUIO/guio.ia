@@ -6,7 +6,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { MessageSquare, DollarSign, Gauge } from "lucide-react";
+import { MessageSquare, DollarSign, Gauge, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   AreaChart,
@@ -108,8 +108,14 @@ export function DashboardPage() {
             ? ((respostas / totalConversas) * 100).toFixed(1)
             : 0;
 
+        const messagesAssistant = messages?.filter((m) => m.role === "assistant" && m.tokens !== 0)
+        const messagesAssistantCount = messagesAssistant.length;
+        let somaInterval = 0;
+        messagesAssistant.filter(msg => {
+          somaInterval += msg.response_interval;
+        });
         // Exemplo de cálculo do tempo médio (em segundos)
-        const tempoMedioResposta = "0.0";
+        const tempoMedioResposta = Math.round(somaInterval / messagesAssistantCount);
 
         const custoPorConversa =
           totalConversas > 0
@@ -249,15 +255,15 @@ export function DashboardPage() {
       }%`,
       changeType: dashboardData.taxaChange >= 0 ? "positive" : "negative",
     },
-    // {
-    //   title: "Tempo Médio de Resposta",
-    //   value: `${dashboardData.tempoMedioResposta}s`,
-    //   icon: Clock,
-    //   change: `${dashboardData.tempoChange > 0 ? "+" : ""}${
-    //     dashboardData.tempoChange
-    //   }%`,
-    //   changeType: dashboardData.tempoChange >= 0 ? "positive" : "negative",
-    // },
+    {
+      title: "Tempo Médio de Resposta",
+      value: `${dashboardData.tempoMedioResposta}s`,
+      icon: Clock,
+      change: `${dashboardData.tempoChange > 0 ? "+" : ""}${
+        dashboardData.tempoChange
+      }%`,
+      changeType: dashboardData.tempoChange >= 0 ? "positive" : "negative",
+    },
     {
       title: "Custo por Conversa",
       value: `$ ${dashboardData.custoPorConversa.toLocaleString("pt-BR", {

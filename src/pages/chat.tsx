@@ -480,7 +480,7 @@ export function ChatPage() {
                 </div>
                 <div>
                   <h2 className="text-lg sm:text-xl font-semibold">
-                    {selectedCustomer.nome} /{" "}
+                    {selectedCustomer.nome} •{" "}
                     {selectedCustomer.ativacao ? "IA Ativada" : "IA Desativada"}
                   </h2>
                   <p className="text-sm text-muted-foreground">
