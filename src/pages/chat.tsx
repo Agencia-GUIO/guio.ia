@@ -20,6 +20,7 @@ import {
   X,
   Bot,
   User,
+  Badge,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -92,7 +93,7 @@ export function ChatPage() {
 
       if (errorAuth || !user) {
         toast({
-          title: "Erro ao buscar Usuario",
+          title: "Erro ao buscar Usuário",
           description: errorAuth?.message,
         });
       }
@@ -103,9 +104,12 @@ export function ChatPage() {
         .eq("phone", selectedCustomer?.celular_cliente)
         .eq("company_id", user.user?.user_metadata.company_id)
         .order("created_at", { ascending: true });
+
       if (!error) setMessages(data);
     }
+
     fetchMessages();
+
     const channel = supabase
       .channel("messages")
       .on(
@@ -116,11 +120,45 @@ export function ChatPage() {
           table: "messages",
           filter: `phone=eq.${selectedCustomer.celular_cliente}`,
         },
-        (payload) => {
+        async (payload) => {
           setMessages((current) => [...current, payload.new as Message]);
+
+          const newMessage = payload.new as Message;
+
+          // Atualizar o campo last_message_answered no cliente correspondente
+          if (newMessage.customer_id) {
+            const lastMessageAnswered = !(newMessage.role === "customer");
+
+            const { error } = await supabase
+              .from("customers")
+              .update({ last_message_answered: lastMessageAnswered })
+              .eq("id", newMessage.customer_id);
+
+            if (error) {
+              console.error("Erro ao atualizar last_message_answered:", error);
+            } else {
+              // Atualizar a lista de clientes localmente
+              setCustomers((current) =>
+                current.map((c) =>
+                  c.id === String(newMessage.customer_id)
+                    ? { ...c, last_message_answered: lastMessageAnswered }
+                    : c
+                )
+              );
+
+              if (selectedCustomer?.id === String(newMessage.customer_id)) {
+                setSelectedCustomer((prev) =>
+                  prev
+                    ? { ...prev, last_message_answered: lastMessageAnswered }
+                    : prev
+                );
+              }
+            }
+          }
         }
       )
       .subscribe();
+
     return () => supabase.removeChannel(channel);
   }, [selectedCustomer]);
 
@@ -149,6 +187,33 @@ export function ChatPage() {
     setLoading(false);
   }
 
+  async function changeCustomer(customer: Customer) {
+    setLoading(true);
+    if (customer.last_message_answered == false) {
+      const { error } = await supabase
+        .from("customers")
+        .update({
+          last_message_answered: true,
+        })
+        .eq("id", customer.id);
+
+      if (error) {
+        console.error("Error toggling customer activation:", error);
+      } else {
+        setCustomers((current) =>
+          current.map((c) =>
+            c.id === customer.id ? { ...c, last_message_answered: true } : c
+          )
+        );
+        if (selectedCustomer?.id === customer.id) {
+          setSelectedCustomer({ ...customer, last_message_answered: true });
+        }
+      }
+    }
+    setSelectedCustomer(customer);
+    setLoading(false);
+  }
+
   const sendMessage = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -161,6 +226,7 @@ export function ChatPage() {
         role: "assistant" as const,
         phone: selectedCustomer.celular_cliente,
         company_id: selectedCustomer.company_id,
+        customer_id: selectedCustomer.id,
       };
 
       const { data, error } = await supabase
@@ -216,6 +282,11 @@ export function ChatPage() {
   const filteredCustomers = customers.filter((customer) =>
     customer.nome.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  function removePrefixAutomationFromMessage(message: string){
+    const prefix = "*** AUTOMAÇÃO CUSTOMER ***";
+    return message.replace(prefix, "").trim();
+  }
 
   return (
     <div className="relative flex h-[calc(100vh-4rem)] bg-background">
@@ -335,38 +406,56 @@ export function ChatPage() {
           <ScrollArea className="flex-1">
             <div className="divide-y">
               {filteredCustomers.length > 0 ? (
-                filteredCustomers.map((customer) => (
-                  <button
-                    key={customer.id}
-                    onClick={() => {
-                      setSelectedCustomer(customer);
-                      setSidebarOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full max-w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent ",
-                      selectedCustomer?.id === customer.id && "bg-accent"
-                    )}
-                    style={{ wordBreak: "break-word", whiteSpace: "normal" }} // Permite quebra de linha
-                  >
-                    <div className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full bg-primary/10">
-                      <User className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium break-words">
-                        {customer.nome}
-                      </div>
-                      <div className="truncate text-xs text-muted-foreground">
-                        {customer.celular_cliente}
-                      </div>
-                    </div>
-                    <div
-                      className={cn(
-                        "h-2 w-2 shrink-0 rounded-full",
-                        customer.ativacao ? "bg-primary" : "bg-muted"
-                      )}
-                    />
-                  </button>
-                ))
+                filteredCustomers.map((customer) => {
+                  return (
+                    <>
+                      <button
+                        key={customer.id}
+                        onClick={() => {
+                          changeCustomer(customer);
+
+                          setSidebarOpen(false);
+                        }}
+                        className={cn(
+                          "flex w-full max-w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent",
+                          selectedCustomer?.id === customer.id && "bg-accent",
+                          customer.last_message_answered ? "" : "bg-primary/10"
+                        )}
+                        style={{
+                          wordBreak: "break-word",
+                          whiteSpace: "normal",
+                        }} // Permite quebra de linha
+                      >
+                        <div
+                          className={cn(
+                            "flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full bg-primary/10"
+                          )}
+                        >
+                          <User className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium break-words">
+                            {customer.nome}
+                          </div>
+                          <div className="truncate text-xs text-muted-foreground">
+                            {customer.celular_cliente}
+                          </div>
+                        </div>
+
+                        <span
+                          className={cn(
+                            "text-xs font-medium",
+                            customer.last_message_answered
+                              ? "text-green-600"
+                              : "text-red-600"
+                          )}
+                        >
+                          {customer.last_message_answered ? "Lido" : "Não lido"}
+                        </span>
+                      </button>
+                    </>
+                  );
+                })
               ) : (
                 <div className="py-4 text-center text-sm text-muted-foreground">
                   Nenhum cliente encontrado
@@ -396,7 +485,7 @@ export function ChatPage() {
                 </div>
                 <div>
                   <h2 className="text-lg sm:text-xl font-semibold">
-                    {selectedCustomer.nome} /{" "}
+                    {selectedCustomer.nome} •{" "}
                     {selectedCustomer.ativacao ? "IA Ativada" : "IA Desativada"}
                   </h2>
                   <p className="text-sm text-muted-foreground">
@@ -456,7 +545,7 @@ export function ChatPage() {
                             : "bg-accent"
                         )}
                       >
-                        <p className="break-words">{message.message_content}</p>
+                        <p className="break-words">{removePrefixAutomationFromMessage(message.message_content)}</p>
                       </div>
                     </div>
                   </div>
@@ -481,7 +570,7 @@ export function ChatPage() {
             </div>
           </>
         ) : (
-          <div className="flex flex-1 items-center justify-center p-4 text-center">
+          <div className="flex flex-1 flex-col items-center justify-center p-4 text-center">
             <h2 className="text-lg font-semibold">Nenhum chat selecionado</h2>
             <p className="text-sm text-muted-foreground">
               Selecione uma conversa para começar

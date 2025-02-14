@@ -5,6 +5,7 @@ RETURNS TABLE (
   nome text,
   celular_cliente text,
   timer_is_active boolean,
+  ativacao boolean,
   message_content text,
   total_messages bigint
 ) AS $$
@@ -25,6 +26,7 @@ BEGIN
     c.nome,
     c.celular_cliente,
     c.timer_is_active,
+    c.ativacao,
     lm.message_content,
     lm.msg_count as total_messages
   FROM customers c

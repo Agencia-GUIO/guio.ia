@@ -6,7 +6,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { MessageSquare, DollarSign, Gauge } from "lucide-react";
+import { MessageSquare, DollarSign, Gauge, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   AreaChart,
@@ -54,15 +54,7 @@ export function DashboardPage() {
     { name: "GUIO.AI", value: 0 },
   ]);
 
-  const [costData, setCostData] = useState([
-    { date: "01/02", value: 0 },
-    { date: "02/02", value: 0 },
-    { date: "03/02", value: 0 },
-    { date: "04/02", value: 0 },
-    { date: "05/02", value: 0 },
-    { date: "06/02", value: 0 },
-    { date: "07/02", value: 0 },
-  ]);
+  const [costData, setCostData] = useState([{ date: "", value: 0 }]);
 
   const [statusDetails, setStatusDetails] = useState({
     totalConversations: 0,
@@ -82,13 +74,19 @@ export function DashboardPage() {
             title: "Erro ao buscar Usuario",
             description: error?.message,
           });
+          return;
         }
+
+        const today = new Date();
+        const past30Days = new Date();
+        past30Days.setDate(today.getDate() - 30);
 
         // Fetch messages data
         const { data: messages, error: messagesError } = await supabase
           .from("messages")
           .select("*")
-          .eq("company_id", user.user?.user_metadata.company_id);
+          .eq("company_id", user.user?.user_metadata.company_id)
+          .gte("created_at", past30Days.toISOString());
 
         if (messagesError) throw messagesError;
 
@@ -97,10 +95,12 @@ export function DashboardPage() {
           messages?.reduce((acc, m) => acc + (m.custo_tokens || 0), 0) || 0
         ).toFixed(2);
         const mediaTokens =
-          Math.round(
-            messages?.reduce((acc, m) => acc + (m.tokens || 0), 0) /
-              totalConversas
-          ) || 0;
+          totalConversas > 0
+            ? Math.round(
+                messages.reduce((acc, m) => acc + (m.tokens || 0), 0) /
+                  totalConversas
+              )
+            : 0;
         const respostas =
           messages?.filter((m) => m.role === "assistant").length || 0;
         const taxaResposta =
@@ -108,15 +108,21 @@ export function DashboardPage() {
             ? ((respostas / totalConversas) * 100).toFixed(1)
             : 0;
 
+        const messagesAssistant = messages?.filter(
+          (m) => m.role === "assistant" && m.tokens !== 0
+        );
+        const messagesAssistantCount = messagesAssistant.length;
+        let somaInterval = 0;
+        messagesAssistant.forEach((msg) => {
+          somaInterval += msg.response_interval;
+        });
         // Exemplo de cálculo do tempo médio (em segundos)
-        const tempoMedioResposta = "0.0";
-
+        const tempoMedioResposta = Math.round(somaInterval / messagesAssistantCount) || 0;
         const custoPorConversa =
           totalConversas > 0
             ? (Number(custoTotal) / totalConversas).toFixed(2)
             : "0.00";
 
-        // Update dashboard stats
         setDashboardData({
           totalConversas,
           custoTotal: Number(custoTotal),
@@ -137,6 +143,7 @@ export function DashboardPage() {
           .from("customers")
           .select("*")
           .eq("company_id", user.user?.user_metadata.company_id)
+          .gte("created_at", past30Days.toISOString())
           .order("created_at", { ascending: false });
 
         if (customersError) throw customersError;
@@ -145,11 +152,9 @@ export function DashboardPage() {
         const total = customers?.length || 0;
         const inactive = total - active;
 
-        // Calculate percentages
         const activePercentage = total > 0 ? (active / total) * 100 : 0;
         const inactivePercentage = total > 0 ? (inactive / total) * 100 : 0;
 
-        // Find last activation/deactivation dates
         const lastActivated =
           customers?.find((c) => c.ativacao)?.created_at || null;
         const lastDeactivated =
@@ -179,8 +184,7 @@ export function DashboardPage() {
         ]);
 
         // Calculate costs per day
-        const today = new Date();
-        const costDataArray = Array.from({ length: 7 }, (_, i) => {
+        const costDataArray = Array.from({ length: 30 }, (_, i) => {
           const date = new Date(today);
           date.setDate(date.getDate() - i);
           const messagesOnDate = messages?.filter(
@@ -249,15 +253,15 @@ export function DashboardPage() {
       }%`,
       changeType: dashboardData.taxaChange >= 0 ? "positive" : "negative",
     },
-    // {
-    //   title: "Tempo Médio de Resposta",
-    //   value: `${dashboardData.tempoMedioResposta}s`,
-    //   icon: Clock,
-    //   change: `${dashboardData.tempoChange > 0 ? "+" : ""}${
-    //     dashboardData.tempoChange
-    //   }%`,
-    //   changeType: dashboardData.tempoChange >= 0 ? "positive" : "negative",
-    // },
+    {
+      title: "Tempo Médio de Resposta",
+      value: `${dashboardData.tempoMedioResposta}s`,
+      icon: Clock,
+      change: `${dashboardData.tempoChange > 0 ? "+" : ""}${
+        dashboardData.tempoChange
+      }%`,
+      changeType: dashboardData.tempoChange >= 0 ? "positive" : "negative",
+    },
     {
       title: "Custo por Conversa",
       value: `$ ${dashboardData.custoPorConversa.toLocaleString("pt-BR", {
@@ -296,7 +300,7 @@ export function DashboardPage() {
                     : "text-red-500"
                 )}
               >
-                {stat.change} em relação ao período anterior
+                nos últimos 30 dias
               </p>
             </CardContent>
           </Card>

@@ -87,12 +87,14 @@ export default function SettingsPage() {
                   placeholder="Nova Senha"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
+                  className="dark:text-cyan-50 text-neutral-950"
                 />
                 <Input
                   type="password"
                   placeholder="Confirmar Nova Senha"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="dark:text-cyan-50 text-neutral-950"
                 />
                 {error && <p className="text-red-500 text-sm">{error}</p>}
               </div>
