@@ -19,8 +19,26 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/hooks/use-toast";
 
 import axios from "axios";
-import { BarChart, Bot, Lightbulb, LineChart, Loader2, TrendingUp } from "lucide-react";
-import { CartesianGrid, XAxis, YAxis, Tooltip, Bar, ResponsiveContainer } from "recharts";
+import {
+  Bot,
+  ChevronLeft,
+  ChevronRight,
+  Lightbulb,
+  LineChart,
+  Loader2,
+  TrendingUp,
+} from "lucide-react";
+import {
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Bar,
+  ResponsiveContainer,
+  BarChart,
+} from "recharts";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface InsightAnalysis {
   id: string;
@@ -34,34 +52,9 @@ interface InsightAnalysis {
       negative: number;
       neutral: number;
     };
+    situations: {};
     findings: string[];
     recommendations: string[];
-    situations: {
-      "Retomada de Cadastro": {
-        quantity: string;
-        percentage: string;
-      };
-      "Problemas com CEMIG": {
-        quantity: string;
-        percentage: string;
-      };
-      "Cadastro Duplicado": {
-        quantity: string;
-        percentage: string;
-      };
-      "Dúvidas sobre o Serviço": {
-        quantity: string;
-        percentage: string;
-      };
-      "Problemas de Acesso": {
-        quantity: string;
-        percentage: string;
-      };
-      "Cadastros Finalizados": {
-        quantity: string;
-        percentage: string;
-      };
-    }
   };
 }
 
@@ -76,6 +69,7 @@ export function InsightsPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [insights, setInsights] = useState<InsightAnalysis[]>([]);
   const [currentInsightIndex, setCurrentInsightIndex] = useState(0);
+  // const [dtaSituation, setDtaSituation] = useState<any>();
   const [user, setUser] = useState<{ id: string } | null>(null);
   const { toast } = useToast();
 
@@ -229,26 +223,6 @@ export function InsightsPage() {
   }
 
   const currentInsight = insights[currentInsightIndex];
-  // const situations_test_data = [
-  //   { name: "Retomada de Cadastro", quantity: 32 },
-  //   { name: "Problemas com CEMIG", quantity: 28 },
-  //   { name: "Cadastro Duplicado", quantity: 15 },
-  //   { name: "Dúvidas sobre o Serviço", quantity: 25 },
-  //   { name: "Problemas de Acesso", quantity: 19 },
-  //   { name: "Cadastros Finalizados", quantity: 45 },
-  // ];
-
-  // const totalQuantity = situations_test_data.reduce(
-  //   (sum, item) => sum + item.quantity,
-  //   0
-  // );
-
-  // const formattedTestData = situations_test_data.map((item) => ({
-  //   ...item,
-  //   percentage: ((item.quantity / totalQuantity) * 100).toFixed(1) + "%",
-  // }));
-
-  // const [situationData, setSituationData] = useState(formattedTestData);
 
   if (!insights.length) {
     return (
@@ -313,6 +287,14 @@ export function InsightsPage() {
       </div>
     );
   }
+
+  const dtaSituation = Object.entries(
+    currentInsight?.insights?.situations || []
+  ).map(([key, value]: [string, any]) => ({
+    name: key,
+    quantity: value?.quantity,
+    percentage: value?.percentage,
+  }));
   return (
     <div className="space-y-8 p-4 sm:p-6 md:p-8 w-full max-w-6xl mx-auto">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -355,6 +337,34 @@ export function InsightsPage() {
           </Button>
         </div>
       </div>
+
+      <div className="flex items-center justify-between">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => {
+            setCurrentInsightIndex((i) => Math.min(insights.length - 1, i + 1));
+          }}
+          disabled={currentInsightIndex === insights.length - 1}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <div className="text-sm text-muted-foreground">
+          Análise de{" "}
+          {format(currentInsight.created_at, "dd 'de' MMMM", {
+            locale: ptBR,
+          })}
+        </div>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setCurrentInsightIndex((i) => Math.max(0, i - 1))}
+          disabled={currentInsightIndex === 0}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
@@ -474,14 +484,14 @@ export function InsightsPage() {
             </ul>
           </CardContent>
         </Card>
-        {/* <Card>
+        <Card>
           <CardHeader>
             <CardTitle>Distribuição de Situações</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[200px] sm:h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={situationData} layout="vertical">
+                <BarChart data={dtaSituation} layout="vertical">
                   <CartesianGrid
                     strokeDasharray="3 3"
                     className="stroke-muted"
@@ -498,7 +508,7 @@ export function InsightsPage() {
                     type="category"
                     stroke="hsl(var(--muted-foreground))"
                     fontSize={12}
-                    width={120}
+                    width={150}
                     tickLine={false}
                     axisLine={false}
                   />
@@ -512,8 +522,54 @@ export function InsightsPage() {
               </ResponsiveContainer>
             </div>
           </CardContent>
-        </Card> */}
+        </Card>
       </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Relação Percentual de Situações</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[200px] sm:h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <div className="mt-4">
+                <table className="w-full border-collapse border border-gray-300">
+                  <thead>
+                    <tr className="bg-gray-800 text-white">
+                      <th className="border border-gray-300 px-4 py-2">
+                        Situação
+                      </th>
+                      <th className="border border-gray-300 px-4 py-2">
+                        Quantidade
+                      </th>
+                      <th className="border border-gray-300 px-4 py-2">
+                        Porcentagem
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dtaSituation.map((row, index) => (
+                      <tr
+                        key={index}
+                        className="border border-gray-300 text-center"
+                      >
+                        <td className="border border-gray-300 px-4 py-2">
+                          {row.name}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2">
+                          {row.quantity}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2">
+                          {row.percentage}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
