@@ -204,7 +204,7 @@ export function InsightsPage() {
             created_at: new Date(item.created_at),
           }))
         );
-
+        setCurrentInsightIndex(0);
         toast({
           title: "Sucesso",
           description: "Dados enviados com sucesso!!!",
