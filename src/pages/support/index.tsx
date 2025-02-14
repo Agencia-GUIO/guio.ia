@@ -51,7 +51,10 @@ export default function SupportPage() {
         }
       );
       setLoading(false);
-      window.location.reload();
+      setSubject("")
+      setMessage("")
+      setSuccess("E-mail enviada com sucesso!")
+      // window.location.reload();
       return response;
     } catch (error: any) {}
   }
