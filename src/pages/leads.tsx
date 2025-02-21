@@ -20,8 +20,9 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/components/hooks/use-toast";
+import { DateRange } from "react-day-picker";
 
-type DateRange = { from: Date; to?: Date };
+// type DateRange = { from: Date; to?: Date };
 type Lead = {
   id: string;
   created_at: string;
@@ -36,7 +37,8 @@ type Lead = {
 const PAGE_SIZE = 10;
 
 export function LeadsPage() {
-  const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  // const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -179,7 +181,7 @@ export function LeadsPage() {
                 mode="range"
                 defaultMonth={dateRange?.from}
                 selected={dateRange}
-                onSelect={setDateRange}
+                onSelect={(range) => setDateRange(range)}
                 numberOfMonths={2}
                 locale={ptBR}
               />
