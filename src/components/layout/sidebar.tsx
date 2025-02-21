@@ -4,7 +4,6 @@ import { ScrollArea } from "../ui/scroll-area";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { routes } from "@/lib/routes";
 import { useLocation, Link } from "react-router-dom";
-import { toAbsoluteUrl } from "@/public/utils/AssetsHelper";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
