@@ -58,10 +58,20 @@ export function DashboardPage() {
                     .from("messages")
                     .select("*")
                     .eq("company_id", user.user?.user_metadata.company_id)
-                    .gte("created_at", past30Days.toISOString());
+                    .gte("created_at", past30Days.toISOString())
+                    .limit(5000);
                 if (messagesError)
                     throw messagesError;
-                const totalConversas = messages?.length || 0;
+
+                const { count, errorCount } = await supabase
+                .from("messages")
+                .select("*", { count: "exact", head: true }) // Conta registros sem trazer os dados
+                .eq("company_id", user.user?.user_metadata.company_id)
+                .gte("created_at", past30Days.toISOString());
+                if (errorCount)
+                    throw errorCount;
+
+                const totalConversas = count || 0;
                 const custoTotal = (messages?.reduce((acc, m) => acc + (m.custo_tokens || 0), 0) || 0).toFixed(2);
                 const mediaTokens = totalConversas > 0
                     ? Math.round(messages.reduce((acc, m) => acc + (m.tokens || 0), 0) /
@@ -151,6 +161,8 @@ export function DashboardPage() {
         }
         fetchDashboardData();
     }, []);
+  console.log('DEBUG 01: CONVERSAS', dashboardData.totalConversas)
+
     const stats = [
         {
             title: "Total de Conversas",
